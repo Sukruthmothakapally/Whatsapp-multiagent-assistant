@@ -18,3 +18,8 @@ langgraph-checkpoint-sqlite>=2.0.1
 aiosqlite>=0.20.0
 qdrant-client>=1.12.1
 sentence-transformers>=3.3.1
+
+uvicorn
+fastapi
+openai
+pydantic-settings
