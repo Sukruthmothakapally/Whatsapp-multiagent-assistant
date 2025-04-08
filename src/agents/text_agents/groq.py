@@ -6,8 +6,7 @@ client = OpenAI(
     api_key=settings.groq_api_key
 )
 
-
-def ask_groq(prompt: str, conversation_id: str | None = None) -> str:
+def ask_groq(prompt: str) -> str:
     try:
         response = client.chat.completions.create(
             model=settings.groq_model,
