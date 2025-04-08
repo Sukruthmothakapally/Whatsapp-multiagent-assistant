@@ -7,13 +7,14 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
     memory = get_memory(conversation_id)
 
     if memory:
-        context = "\n".join(memory) + "\n" + message
+        context = "\n".join([f"{role.capitalize()}: {msg}" for role, msg in memory]) + f"\nUser: {message}"
         response = ask_groq(context)
     else:
         retrieved = query_qdrant(message)
         context = retrieved + "\n" + message if retrieved else message
         response = ask_groq(context)
 
-    add_to_memory(conversation_id, message)
+    add_to_memory(conversation_id, "user", message)
+    add_to_memory(conversation_id, "assistant", response)
     add_to_qdrant(conversation_id, message)
     return response
