@@ -1,5 +1,6 @@
 import httpx
 import uuid
+import re
 from server.config import settings
 from sentence_transformers import SentenceTransformer
 
@@ -12,6 +13,9 @@ HEADERS = {
 
 COLLECTION_NAME = "chainlit_memory"
 VECTOR_DIM = 384
+
+def normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip().lower())
 
 def embed_text(text: str) -> list[float]:
     return model.encode(text).tolist()
@@ -38,7 +42,7 @@ def ensure_collection_exists():
 def add_to_qdrant(conversation_id: str, message: str):
     ensure_collection_exists()
     vector = embed_text(message)
-
+    normalized = normalize(message)
     point_id = str(uuid.uuid4())
 
     payload = {
@@ -48,7 +52,7 @@ def add_to_qdrant(conversation_id: str, message: str):
                 "vector": vector,
                 "payload": {
                     "conversation_id": conversation_id,
-                    "message": message
+                    "message": normalized
                 }
             }
         ]
@@ -69,7 +73,7 @@ def query_qdrant(query: str) -> str:
     vector = embed_text(query)
     payload = {
         "vector": vector,
-        "top": 1,
+        "top": 3,
         "with_payload": True
     }
 
@@ -82,9 +86,9 @@ def query_qdrant(query: str) -> str:
         if response.status_code == 200:
             hits = response.json().get("result", [])
             if hits:
-                message = hits[0]["payload"].get("message", "")
-                print(f"🔁 Retrieved from Qdrant: {message}")
-                return message
+                messages = [hit["payload"].get("message", "") for hit in hits if hit.get("payload")]
+                combined = "\n".join(messages)
+                return combined
         else:
             print(f"⚠️ Qdrant search failed: {response.status_code} - {response.text}")
     except Exception as e:
