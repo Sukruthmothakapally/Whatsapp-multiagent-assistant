@@ -1,5 +1,6 @@
 import chainlit as cl
 import httpx
+import traceback
 from memory.short_term import get_memory, clear_memory, add_to_memory
 
 API_URL = "http://localhost:8000/chat"
@@ -10,11 +11,10 @@ async def on_chat_start():
     cl.user_session.set("id", client_id)
 
     await cl.Message(
-    content="Welcome! Click below to reset chat memory if needed.",
-    actions=[cl.Action(name="reset", label="🔄 Reset Chat", payload={})]
+        content="Welcome! Click below to reset chat memory if needed.",
+        actions=[cl.Action(name="reset", label="🔄 Reset Chat", payload={})]
     ).send()
 
-    # Show short-term memory
     memory = get_memory(client_id)
     for role, msg in memory:
         prefix = "You" if role == "user" else "Assistant"
@@ -34,16 +34,31 @@ async def on_message(message: cl.Message):
         try:
             response = await client.post(
                 API_URL,
-                json={"message": message.content, "conversation_id": client_id}
+                json={"message": message.content, "conversation_id": client_id},
+                timeout=10.0
             )
-            data = response.json()
-            user_msg, assistant_reply = message.content, data["reply"]
 
-            # Store both sides in memory
-            add_to_memory(client_id, "user", user_msg)
-            add_to_memory(client_id, "assistant", assistant_reply)
+            cl.logger.debug(f"Response status: {response.status_code}")
+            cl.logger.debug(f"Response body: {response.text}")
 
-            await cl.Message(content=assistant_reply).send()
+            if response.status_code != 200:
+                raise ValueError(f"Non-200 response: {response.status_code} - {response.text}")
+
+            try:
+                data = response.json()
+            except Exception as parse_error:
+                raise ValueError(f"JSON parse error: {parse_error} | Response: {response.text}")
+
+            reply = data.get("reply")
+            if not reply or not isinstance(reply, str):
+                raise ValueError(f"Missing or invalid 'reply' in response: {data}")
+
+            add_to_memory(client_id, "user", message.content)
+            add_to_memory(client_id, "assistant", reply)
+
+            await cl.Message(content=reply).send()
 
         except Exception as e:
+            cl.logger.error("Exception occurred in on_message:")
+            cl.logger.error(traceback.format_exc())
             await cl.Message(content=f"Error: {str(e)}").send()

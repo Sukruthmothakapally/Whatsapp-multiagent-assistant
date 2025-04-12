@@ -1,22 +1,24 @@
 import logging
 from agents.text_agents.groq import ask_groq, ask_routing_agent
 from memory.short_term import get_memory, add_to_memory
-from memory.long_term import query_qdrant, add_to_qdrant
+from memory.long_term import query_qdrant, add_to_qdrant  # both are now async
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def is_error(response: str) -> bool:
     return not response or response.lower().startswith("error:")
 
+
 async def route_message(message: str, conversation_id: str | None = None) -> str:
     conversation_id = conversation_id or "default"
-    logger.info(f"📨 Message [{conversation_id}]: {message}")
+    logger.info(f"\n📨 [{conversation_id}] Message: {message}")
 
     routing_context = f"""
         You are a routing agent. Your job is to determine the best memory source for answering the user's query.
-        You must return only one of these responses: DIRECT, USE_SHORT_TERM, USE_LONG_TERM, or NONE.
+        You must return only one of these responses: DIRECT, USE_SHORT_TERM, USE_LONG_TERM, or NONE. 
 
         Use this logic:
         1. If the user is stating a fact (e.g., 'I live in New York', 'I am a student'), treat it as DIRECT.
@@ -37,13 +39,14 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
     """
 
     decision = ask_routing_agent(routing_context).strip().split()[0].upper()
-    logger.info(f"🧭 Routing decision: {decision} → [{conversation_id}]")
+    logger.info(f"🧭 Routing decision: {decision}")
 
     response = ""
     used_memory_type = None
 
     if decision == "DIRECT":
         response = ask_groq(message)
+        logger.info("📗 DIRECT → LLM called")
         if is_error(response):
             logger.error(f"❗ LLM error in DIRECT: {response}")
             response = "Sorry, I had trouble answering that. Could you please rephrase?"
@@ -59,6 +62,7 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
                 f"Context:\n{context}\n\nQuestion: {message}"
             )
             relevance = ask_routing_agent(relevance_prompt).strip().split()[0].upper()
+            logger.info(f"📘 SHORT_TERM → Relevant: {relevance}")
             if relevance == "YES":
                 response = ask_groq(context)
                 if is_error(response):
@@ -66,17 +70,17 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
                     response = "Sorry, I had trouble answering that. Could you please rephrase?"
                 used_memory_type = "short_term"
             else:
-                logger.info(f"📭 Short-term memory exists but is not relevant. Trying long-term.")
+                logger.info("➡️ SHORT_TERM not relevant. Escalating to LONG_TERM.")
                 decision = "USE_LONG_TERM"
         else:
-            logger.info(f"📭 No short-term memory found. Trying long-term.")
+            logger.info("📭 SHORT_TERM empty. Escalating to LONG_TERM.")
             decision = "USE_LONG_TERM"
 
     if decision == "USE_LONG_TERM":
         retrieved = query_qdrant(message)
-        logger.info(f"📦 Qdrant returned context for [{conversation_id}]")
+        logger.info("📦 LONG_TERM → Qdrant context retrieved")
+        logger.info(f"Long term memory retrieved is: {retrieved}")
         if retrieved:
-            
             context = f"{retrieved} User: {message}"
             relevance_prompt = (
                 f"You are a relevance evaluator. Return YES or NO only.\n"
@@ -84,6 +88,7 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
                 f"Info: {retrieved}\n\nQuestion: {message}"
             )
             relevance = ask_routing_agent(relevance_prompt).strip().split()[0].upper()
+            logger.info(f"📙 LONG_TERM → Relevant: {relevance}")
             if relevance == "YES":
                 response = ask_groq(context)
                 if is_error(response):
@@ -91,24 +96,24 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
                     response = "Sorry, I had trouble answering that. Could you please rephrase?"
                 used_memory_type = "long_term"
             else:
-                logger.info(f"❌ Long-term memory not relevant. Answering fresh.")
+                logger.info("❌ LONG_TERM not relevant. Answering fresh.")
                 context = "User asked something that has no relevant memory. Answer fresh.\n\nUser: " + message
                 response = ask_groq(context)
                 if is_error(response):
-                    logger.error(f"❗ LLM error in fallback from long_term: {response}")
+                    logger.error(f"❗ LLM error in fallback from LONG_TERM: {response}")
                     response = "Sorry, I had trouble answering that. Could you please rephrase?"
                 used_memory_type = "none"
         else:
-            logger.info(f"❌ No long-term memory found. Answering fresh.")
+            logger.info("❌ No LONG_TERM memory found. Answering fresh.")
             context = "User asked something that has no relevant memory. Answer fresh.\n\nUser: " + message
             response = ask_groq(context)
             if is_error(response):
-                logger.error(f"❗ LLM error in fallback from no long_term: {response}")
+                logger.error(f"❗ LLM error in fallback from missing LONG_TERM: {response}")
                 response = "Sorry, I had trouble answering that. Could you please rephrase?"
             used_memory_type = "none"
 
     elif decision == "NONE":
-        logger.info(f"🔄 No memory used. Answering fresh.")
+        logger.info("🔄 NONE → Answering fresh without memory.")
         context = "User asked something that has no relevant memory. Answer fresh.\n\nUser: " + message
         response = ask_groq(context)
         if is_error(response):
@@ -117,7 +122,7 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
         used_memory_type = "none"
 
     if not response:
-        logger.warning(f"⚠️ No response generated. Using fallback.")
+        logger.warning("⚠️ No response generated. Using fallback.")
         response = ask_groq(message)
         if is_error(response):
             logger.error(f"❗ Fallback also failed: {response}")
@@ -128,5 +133,6 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
     add_to_memory(conversation_id, "assistant", response)
     add_to_qdrant(conversation_id, message)
 
-    logger.info(f"✅ [{conversation_id}] → Used: {used_memory_type}")
+    logger.info(f"✅ Final → Memory Used: {used_memory_type}")
+    logger.info(f"📝 Response: {response.strip()[:300]}...")  # trim if too long
     return response
