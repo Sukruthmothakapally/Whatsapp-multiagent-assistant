@@ -34,8 +34,8 @@ def ensure_collection_exists():
             headers=HEADERS,
             json=schema
         )
-        if response.status_code not in (200, 201, 409):
-            print(f"⚠️ Qdrant collection create failed: {response.status_code} - {response.text}")
+        # if response.status_code not in (200, 201, 409):
+        #     print(f"⚠️ Qdrant collection create failed: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ Exception while creating Qdrant collection: {e}")
 
@@ -64,8 +64,8 @@ def add_to_qdrant(conversation_id: str, message: str):
             json=payload,
             headers=HEADERS
         )
-        if response.status_code not in (200, 201):
-            print(f"⚠️ Failed to add point to Qdrant: {response.status_code} - {response.text}")
+        # if response.status_code not in (200, 201):
+        #     print(f"⚠️ Failed to add point to Qdrant: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ Exception while adding to Qdrant: {e}")
 

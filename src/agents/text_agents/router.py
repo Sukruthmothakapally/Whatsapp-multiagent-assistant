@@ -1,38 +1,45 @@
 import logging
 from agents.text_agents.groq import ask_groq, ask_routing_agent
 from memory.short_term import get_memory, add_to_memory
-from memory.long_term import query_qdrant, add_to_qdrant  # both are now async
+from memory.long_term import query_qdrant, add_to_qdrant 
+from agents.audio_agents.speech_to_text import SpeechToText
+from agents.audio_agents.text_to_speech import TextToSpeech
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 def is_error(response: str) -> bool:
     return not response or response.lower().startswith("error:")
 
-
-async def route_message(message: str, conversation_id: str | None = None) -> str:
+async def route_message(message: str | bytes, conversation_id: str | None = None) -> str | bytes:
     conversation_id = conversation_id or "default"
-    logger.info(f"\n📨 [{conversation_id}] Message: {message}")
+    logger.info(f"\n📨 [{conversation_id}] Received: {type(message).__name__}")
+
+    is_audio = isinstance(message, (bytes, bytearray))
+    if is_audio:
+        logger.info("🎧 Detected audio input, invoking STT...")
+        stt = SpeechToText()
+        try:
+            message = await stt.transcribe(message)
+            logger.info(f"✅ Transcribed to text: {message}")
+        except Exception as e:
+            logger.error(f"❗ STT error: {e}")
+            return f"Sorry, I couldn't understand the audio: {e}"
 
     routing_context = f"""
         You are a routing agent. Your job is to determine the best memory source for answering the user's query.
-        You must return only one of these responses: DIRECT, USE_SHORT_TERM, USE_LONG_TERM, or NONE. 
+        You must return only one of these responses: DIRECT, USE_SHORT_TERM, or NONE. 
 
         Use this logic:
         1. If the user is stating a fact (e.g., 'I live in New York', 'I am a student'), treat it as DIRECT.
-        2. If the question includes recency indicators like 'did I just', 'did I recently', 'did I mention earlier', return USE_SHORT_TERM.
-        3. If it's about past facts without recent cues (e.g., 'What is my name?', 'Where do I live?'), return USE_LONG_TERM.
-        4. If the query is generic or unrelated to memory, return NONE.
+        2. If the question includes recency indicators like ('did I just', 'did I recently', 'did I mention earlier'),
+           or if it's about past facts without recent cues (e.g., 'What is my name?', 'Where do I live?') return USE_SHORT_TERM.
+        3. If the query is generic or unrelated to memory, return NONE.
 
         Examples:
         - 'I live in Bangalore' → DIRECT
         - 'I’m pursuing a master’s in CS' → DIRECT
         - 'Did I just tell you my degree?' → USE_SHORT_TERM
-        - 'Did I mention my name earlier?' → USE_SHORT_TERM
-        - 'Where do I live?' → USE_LONG_TERM
-        - 'What’s my background?' → USE_LONG_TERM
         - 'Tell me a joke' → NONE
 
         User query: {message}
@@ -75,7 +82,7 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
         else:
             logger.info("📭 SHORT_TERM empty. Escalating to LONG_TERM.")
             decision = "USE_LONG_TERM"
-
+    
     if decision == "USE_LONG_TERM":
         retrieved = query_qdrant(message)
         logger.info("📦 LONG_TERM → Qdrant context retrieved")
@@ -112,6 +119,7 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
                 response = "Sorry, I had trouble answering that. Could you please rephrase?"
             used_memory_type = "none"
 
+
     elif decision == "NONE":
         logger.info("🔄 NONE → Answering fresh without memory.")
         context = "User asked something that has no relevant memory. Answer fresh.\n\nUser: " + message
@@ -134,5 +142,17 @@ async def route_message(message: str, conversation_id: str | None = None) -> str
     add_to_qdrant(conversation_id, message)
 
     logger.info(f"✅ Final → Memory Used: {used_memory_type}")
-    logger.info(f"📝 Response: {response.strip()[:300]}...")  # trim if too long
+    logger.info(f"📝 Response text: {response.strip()[:100]}...")
+
+    if is_audio:
+        logger.info("🔈 Detected original audio input — converting reply to speech...")
+        tts = TextToSpeech()
+        try:
+            audio_bytes = await tts.synthesize(response)
+            logger.info("✅ Audio synthesis complete")
+            return audio_bytes
+        except Exception as e:
+            logger.error(f"❗ TTS error: {e}")
+            return response
+        
     return response
