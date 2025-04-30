@@ -4,6 +4,8 @@ from memory.short_term import get_memory, add_to_memory
 from memory.long_term import query_qdrant, add_to_qdrant 
 from agents.audio_agents.speech_to_text import SpeechToText
 from agents.audio_agents.text_to_speech import TextToSpeech
+from agents.image_agents.image_to_text import ImageToText
+from agents.image_agents.text_to_image import TextToImage
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -11,12 +13,15 @@ logger = logging.getLogger(__name__)
 def is_error(response: str) -> bool:
     return not response or response.lower().startswith("error:")
 
-async def route_message(message: str | bytes, conversation_id: str | None = None) -> str | bytes:
+async def route_message(
+    message: str | bytes,
+    conversation_id: str | None = None,
+    media_type: str = "text"  # either "audio", "image", or "text"
+    ) -> str | bytes:
     conversation_id = conversation_id or "default"
-    logger.info(f"\n📨 [{conversation_id}] Received: {type(message).__name__}")
+    logger.info(f"\n📨 [{conversation_id}] Received: {type(message).__name__} | Media type: {media_type}")
 
-    is_audio = isinstance(message, (bytes, bytearray))
-    if is_audio:
+    if media_type == "audio":
         logger.info("🎧 Detected audio input, invoking STT...")
         stt = SpeechToText()
         try:
@@ -25,6 +30,16 @@ async def route_message(message: str | bytes, conversation_id: str | None = None
         except Exception as e:
             logger.error(f"❗ STT error: {e}")
             return f"Sorry, I couldn't understand the audio: {e}"
+
+    elif media_type == "image":
+        logger.info("🖼️ Detected image input, invoking ITT...")
+        try:
+            itt = ImageToText()
+            message = await itt.analyze_image(message)
+            logger.info(f"✅ Image described as: {message}")
+        except Exception as e:
+            logger.error(f"❗ ITT error: {e}")
+            return f"Sorry, I couldn't understand the image: {e}"
 
     routing_context = f"""
         You are a routing agent. Your job is to determine the best memory source for answering the user's query.
@@ -144,7 +159,27 @@ async def route_message(message: str | bytes, conversation_id: str | None = None
     logger.info(f"✅ Final → Memory Used: {used_memory_type}")
     logger.info(f"📝 Response text: {response.strip()[:100]}...")
 
-    if is_audio:
+    tti_routing_prompt = f"""
+        You are an intelligent router. The user or assistant has responded with:
+        "{response}"
+        Should this be treated as a prompt to generate an image? 
+        Only return YES or NO.
+        """
+    
+    is_tti = ask_routing_agent(tti_routing_prompt).strip().split()[0].upper() == "YES"
+    
+    if is_tti:
+        try:
+            logger.info(f"🖌️ LLM router says generate image → invoking TTI for: {response}")
+            tti = TextToImage()
+            image_bytes = await tti.generate_image(response)
+            logger.info("✅ TTI image generated successfully")
+            return image_bytes
+        except Exception as e:
+            logger.error(f"❗ TTI error: {e}")
+            return response
+        
+    if media_type == "audio":
         logger.info("🔈 Detected original audio input — converting reply to speech...")
         tts = TextToSpeech()
         try:
