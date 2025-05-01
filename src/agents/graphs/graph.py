@@ -96,18 +96,36 @@ async def route_message(
         return final_state["response_bytes"]
     else:
         return final_state.get("response_text", "Sorry, I couldn't generate a response.")
-    
 
-from langserve import RemoteRunnable
-from langsmith import Client
+import os
+import logging
+from langchain_core.runnables.graph import MermaidDrawMethod
 
-# Set up LangSmith client for tracing
-try:
-    client = Client()
-    trace_handler = client.as_trace_handler()
-    
-    # Register the graph with LangGraph Studio
-    remote_graph = RemoteRunnable("http://localhost:8123/route_message")
-    logger.info("✅ LangGraph Studio integration configured successfully")
-except Exception as e:
-    logger.warning(f"⚠️ LangGraph Studio integration failed: {e}")
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+def visualize_with_mermaid():
+    """Render and save the router graph as a PNG using Mermaid.ink API."""
+    try:
+        logger.info("🔧 Starting Mermaid graph visualization...")
+
+        # Compile and access internal graph
+        compiled_graph = create_router_graph().compile()
+        mermaid_graph = compiled_graph.get_graph()
+
+        logger.info("🧠 Compiled graph retrieved successfully.")
+
+        # Generate image
+        img_bytes = mermaid_graph.draw_mermaid_png(draw_method=MermaidDrawMethod.API)
+
+        output_path = os.path.join(os.getcwd(), "router_graph_mermaid.png")
+        with open(output_path, "wb") as f:
+            f.write(img_bytes)
+
+        logger.info(f"✅ Graph image saved at: {output_path}")
+
+    except Exception as e:
+        logger.error("❌ Error generating graph image", exc_info=True)
+
+# if __name__ == "__main__":
+#     visualize_with_mermaid()
