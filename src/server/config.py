@@ -21,13 +21,22 @@ class GoogleSettings(BaseSettings):
     """Configuration settings for Google API integration"""
     client_secrets_file: str = str(BASE_DIR / "client_secret.json")
     token_file: str = str(BASE_DIR / "google_token.pickle")
-    redirect_uri: str = "https://7420-73-231-49-218.ngrok-free.app/oauth/callback"
+    # Remove the hardcoded URL and use environment variable
+    redirect_uri: str
     
-    # Google API scopes
+    # Google API scopes with read and write permissions
     scopes: List[str] = [
+        # Gmail - read and send
         "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/gmail.send",
+        
+        # Calendar - read, write and delete
         "https://www.googleapis.com/auth/calendar.readonly",
-        "https://www.googleapis.com/auth/tasks.readonly"
+        "https://www.googleapis.com/auth/calendar.events",
+        
+        # Tasks - read, write and manage
+        "https://www.googleapis.com/auth/tasks.readonly", 
+        "https://www.googleapis.com/auth/tasks"
     ]
     
     class Config:

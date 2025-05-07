@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
+from datetime import datetime
 
 class MessageRequest(BaseModel):
     message: str
@@ -69,3 +70,41 @@ class OAuthResponse(BaseModel):
 class ErrorResponse(BaseModel):
     """Model for error responses"""
     error: str
+
+
+class EmailRequest(BaseModel):
+    to: List[str]
+    subject: str
+    body: str
+    cc: Optional[List[str]] = None
+    bcc: Optional[List[str]] = None
+
+class EmailSendResponse(BaseModel):
+    status: str
+    message: str
+    message_id: str
+
+class EventRequest(BaseModel):
+    summary: str
+    location: Optional[str] = None
+    description: Optional[str] = None
+    start_time: datetime
+    end_time: datetime
+    attendees: Optional[List[str]] = None
+    calendar_id: Optional[str] = None  # Default to 'primary' in the service
+
+class EventCreateResponse(BaseModel):
+    status: str
+    message: str
+    event_id: str
+
+class TaskRequest(BaseModel):
+    title: str
+    notes: Optional[str] = None
+    due_date: Optional[datetime] = None
+    task_list_id: Optional[str] = None  # Default to '@default' in the service
+
+class TaskCreateResponse(BaseModel):
+    status: str
+    message: str
+    task_id: str

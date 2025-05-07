@@ -149,5 +149,120 @@ class GoogleService:
         
         return all_tasks
 
+    @classmethod
+    def send_email(cls, to: List[str], subject: str, body: str, 
+                cc: Optional[List[str]] = None, bcc: Optional[List[str]] = None) -> str:
+        """
+        Send an email via Gmail API
+        Returns: Message ID of the sent email
+        """
+        from email.mime.text import MIMEText
+        import base64
+        
+        creds = cls.get_credentials()
+        service = build("gmail", "v1", credentials=creds)
+        
+        message = MIMEText(body)
+        message['to'] = ', '.join(to)
+        message['subject'] = subject
+        
+        if cc:
+            message['cc'] = ', '.join(cc)
+        if bcc:
+            message['bcc'] = ', '.join(bcc)
+        
+        # Create the raw email
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+        
+        # Send the message
+        sent_message = service.users().messages().send(
+            userId='me',
+            body={'raw': raw_message}
+        ).execute()
+        
+        return sent_message['id']
+
+    @classmethod
+    def create_calendar_event(cls, summary: str, start_time: datetime, end_time: datetime,
+                            location: Optional[str] = None, description: Optional[str] = None,
+                            attendees: Optional[List[str]] = None, calendar_id: str = 'primary') -> str:
+        """
+        Create a calendar event using Google Calendar API
+        Returns: Event ID of the created event
+        """
+        creds = cls.get_credentials()
+        service = build("calendar", "v3", credentials=creds)
+        
+        event = {
+            'summary': summary,
+            'start': {
+                'dateTime': start_time.isoformat(),
+                'timeZone': 'UTC',
+            },
+            'end': {
+                'dateTime': end_time.isoformat(),
+                'timeZone': 'UTC',
+            }
+        }
+        
+        if location:
+            event['location'] = location
+        if description:
+            event['description'] = description
+        
+        if attendees:
+            event['attendees'] = [{'email': email} for email in attendees]
+        
+        created_event = service.events().insert(
+            calendarId=calendar_id,
+            body=event,
+            sendUpdates='all'  # Sends email notifications to attendees
+        ).execute()
+        
+        return created_event['id']
+
+    @classmethod
+    def create_task(cls, title: str, notes: Optional[str] = None,
+                    due_date: Optional[datetime] = None, task_list_id: str = None) -> str:
+        """
+        Create a task using Google Tasks API
+        Returns: Task ID of the created task
+        """
+        creds = cls.get_credentials()
+        service = build("tasks", "v1", credentials=creds)
+        
+        # If no task list ID provided, get the default task list
+        if not task_list_id or task_list_id == '@default':
+            # First retrieve the user's task lists
+            lists_result = service.tasklists().list().execute()
+            task_lists = lists_result.get('items', [])
+            
+            # Use the first task list (usually the default "My Tasks")
+            if not task_lists:
+                raise Exception("No task lists found in the user's account")
+            
+            # Use the ID of the first task list
+            task_list_id = task_lists[0]['id']
+        
+        task = {
+            'title': title
+        }
+        
+        if notes:
+            task['notes'] = notes
+        
+        if due_date:
+            # Format just the date portion in RFC 3339 format
+            # The time portion is discarded by the API anyway
+            due_date_str = due_date.strftime('%Y-%m-%d')
+            task['due'] = f"{due_date_str}T00:00:00Z"
+        
+        created_task = service.tasks().insert(
+            tasklist=task_list_id,
+            body=task
+        ).execute()
+        
+        return created_task['id']
+
 
 google_service = GoogleService()
