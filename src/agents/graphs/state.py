@@ -21,8 +21,8 @@ class RouterState(MessagesState):
     conversation_id: str = "default"
     media_type: Literal["text", "audio", "image"] = "text"
     raw_input: Optional[bytes | str] = None
-    routing_decision: Optional[Literal["DIRECT", "USE_SHORT_TERM", "NONE", "SUMMARIZE_TODAY"]] = None
-    memory_used: Optional[Literal["direct", "short_term", "none", "fallback", "summary"]] = None
+    routing_decision: Optional[Literal["DIRECT", "USE_SHORT_TERM", "NONE", "SUMMARIZE_TODAY", "NEWS"]] = None
+    memory_used: Optional[Literal["direct", "short_term", "none", "fallback", "summary", "news"]] = None
     response_text: Optional[str] = None
     response_media_type: Optional[Literal["text", "audio", "image"]] = "text"
     response_bytes: Optional[bytes] = None

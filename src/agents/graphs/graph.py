@@ -15,7 +15,8 @@ from agents.graphs.nodes import (
     check_media_response_node,
     generate_image_node,
     generate_speech_node,
-    summarize_today_node
+    summarize_today_node,
+    news_node
 )
 from agents.graphs.state import RouterState
 
@@ -37,8 +38,9 @@ def create_router_graph():
     graph_builder.add_node("check_media_response_node", check_media_response_node)
     graph_builder.add_node("generate_image_node", generate_image_node)
     graph_builder.add_node("generate_speech_node", generate_speech_node)
-    graph_builder.add_node("summarize_today_node", summarize_today_node)  
-    graph_builder.add_node("final_node", lambda x: x)
+    graph_builder.add_node("summarize_today_node", summarize_today_node)
+    graph_builder.add_node("news_node", news_node)  # Add the new node
+    graph_builder.add_node("final_node", lambda x: x)  # Identity node to end the graph
     
     # Define the flow
     # Start with processing the media
@@ -54,7 +56,8 @@ def create_router_graph():
     graph_builder.add_conditional_edges("direct_response_node", has_response)
     graph_builder.add_conditional_edges("short_term_memory_node", has_response)
     graph_builder.add_conditional_edges("no_memory_node", has_response)
-    graph_builder.add_conditional_edges("summarize_today_node", has_response)  # Add the new conditional edge
+    graph_builder.add_conditional_edges("summarize_today_node", has_response)
+    graph_builder.add_conditional_edges("news_node", has_response)  # Add the new conditional edge
     
     # After memory update, check if the response should be converted to a different media type
     graph_builder.add_edge("update_memory_node", "check_media_response_node")
@@ -68,7 +71,7 @@ def create_router_graph():
     graph_builder.add_edge("generate_speech_node", END)
     graph_builder.add_edge("final_node", END)
     
-    return graph_builder 
+    return graph_builder
 
 # Compiled graph for use
 router_graph = create_router_graph().compile()
@@ -100,35 +103,35 @@ async def route_message(
     else:
         return final_state.get("response_text", "Sorry, I couldn't generate a response.")
 
-import os
-import logging
-from langchain_core.runnables.graph import MermaidDrawMethod
+# import os
+# import logging
+# from langchain_core.runnables.graph import MermaidDrawMethod
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO)
 
-def visualize_with_mermaid():
-    """Render and save the router graph as a PNG using Mermaid.ink API."""
-    try:
-        logger.info("🔧 Starting Mermaid graph visualization...")
+# def visualize_with_mermaid():
+#     """Render and save the router graph as a PNG using Mermaid.ink API."""
+#     try:
+#         logger.info("🔧 Starting Mermaid graph visualization...")
 
-        # Compile and access internal graph
-        compiled_graph = create_router_graph().compile()
-        mermaid_graph = compiled_graph.get_graph()
+#         # Compile and access internal graph
+#         compiled_graph = create_router_graph().compile()
+#         mermaid_graph = compiled_graph.get_graph()
 
-        logger.info("🧠 Compiled graph retrieved successfully.")
+#         logger.info("🧠 Compiled graph retrieved successfully.")
 
-        # Generate image
-        img_bytes = mermaid_graph.draw_mermaid_png(draw_method=MermaidDrawMethod.API)
+#         # Generate image
+#         img_bytes = mermaid_graph.draw_mermaid_png(draw_method=MermaidDrawMethod.API)
 
-        output_path = os.path.join(os.getcwd(), "router_graph_mermaid.png")
-        with open(output_path, "wb") as f:
-            f.write(img_bytes)
+#         output_path = os.path.join(os.getcwd(), "router_graph_mermaid.png")
+#         with open(output_path, "wb") as f:
+#             f.write(img_bytes)
 
-        logger.info(f"✅ Graph image saved at: {output_path}")
+#         logger.info(f"✅ Graph image saved at: {output_path}")
 
-    except Exception as e:
-        logger.error("❌ Error generating graph image", exc_info=True)
+#     except Exception as e:
+#         logger.error("❌ Error generating graph image", exc_info=True)
 
-# if __name__ == "__main__":
-#     visualize_with_mermaid()
+# # if __name__ == "__main__":
+# #     visualize_with_mermaid()

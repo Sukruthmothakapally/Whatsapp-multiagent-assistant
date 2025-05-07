@@ -3,8 +3,8 @@ import datetime
 import json
 import os
 from typing import Dict, Any
+import requests
 from langchain_core.messages import HumanMessage, AIMessage
-import glob
 
 from agents.text_agents.groq import ask_groq, ask_routing_agent
 from memory.short_term import get_memory, add_to_memory
@@ -73,7 +73,7 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     routing_context = f"""
         You are a routing agent. Your job is to determine the best memory source for answering the user's query.
-        You must return only one of these responses: DIRECT, USE_SHORT_TERM, SUMMARIZE_TODAY, or NONE. 
+        You must return only one of these responses: DIRECT, USE_SHORT_TERM, SUMMARIZE_TODAY, NEWS, or NONE. 
 
         Use this logic:
         1. If the user is stating a fact (e.g., 'I live in New York', 'I am a student'), treat it as DIRECT.
@@ -82,7 +82,10 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
         3. If the user is asking for a summary of today's schedule, today's data, or anything related to
            today's activities (e.g., 'What's on my agenda today?', 'Can you summarize today's schedule?',
            'Send me today's summary', 'What do I have planned for today?'), return SUMMARIZE_TODAY.
-        4. If the query is generic or unrelated to memory, return NONE.
+        4. If the user is asking about news, current events, latest headlines, or specific news topics
+           (e.g., 'What's happening in the world?', 'Tell me the latest news', 'What's going on in technology?',
+           'Any breaking news about climate change?'), return NEWS.
+        5. If the query is generic or unrelated to memory, return NONE.
 
         Examples:
         - 'I live in Bangalore' → DIRECT
@@ -90,6 +93,9 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
         - 'Did I just tell you my degree?' → USE_SHORT_TERM
         - 'Send me today's summary' → SUMMARIZE_TODAY
         - 'What's on my schedule for today?' → SUMMARIZE_TODAY 
+        - 'What's the latest news?' → NEWS
+        - 'Tell me about technology news' → NEWS
+        - 'Any updates on the stock market?' → NEWS
         - 'Tell me a joke' → NONE
 
         User query: {message}
@@ -260,18 +266,6 @@ async def generate_speech_node(state: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"❗ TTS error: {e}")
         return {"response_media_type": "text"} 
-    
-
-import os
-import json
-import datetime
-import glob
-from typing import Dict, Any
-
-import os
-import json
-import datetime
-from typing import Dict, Any
 
 async def summarize_today_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """Generate a summary of today's schedule from daily JSON data."""
@@ -340,6 +334,171 @@ async def summarize_today_node(state: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"❗ Error summarizing today's data: {e}", exc_info=True)
         response = f"Sorry, I encountered an error while trying to access today's data: {str(e)}"
+        return {
+            "response_text": response,
+            "memory_used": "none",
+            "messages": state["messages"] + [AIMessage(content=response)]
+        }
+    
+
+async def news_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Fetch and process news based on user query."""
+    # Get the most recent message
+    message = state["messages"][-1].content
+    
+    # Extract parameters from user query
+    logger.info(f"🗞️ Processing news request: {message}")
+    
+    # Use LLM to extract parameters from the query
+    extraction_prompt = f"""
+    Extract news search parameters from this query: "{message}"
+    
+    Available parameters:
+    - country (2-letter code, e.g., 'us')
+    - category (options: business, entertainment, general, health, science, sports, technology)
+    - q (search keywords)
+    
+    Return a JSON object with these parameters. If a parameter is not mentioned or unclear, omit it.
+    Only include parameters that are clearly specified or strongly implied in the query.
+    """
+    
+    try:
+        # Extract parameters using LLM
+        params_response = ask_groq(extraction_prompt)
+        logger.info(f"🔍 Extracted parameters: {params_response}")
+        
+        # Parse the parameters
+        try:
+            # Clean up the response to ensure it's valid JSON
+            params_text = params_response.strip()
+            if params_text.startswith("```json"):
+                params_text = params_text.replace("```json", "", 1)
+            if params_text.endswith("```"):
+                params_text = params_text.rsplit("```", 1)[0]
+            
+            params = json.loads(params_text.strip())
+        except json.JSONDecodeError:
+            logger.error(f"❗ Failed to parse parameters JSON: {params_response}")
+            # Fallback to manual extraction for common queries
+            params = {}
+            if any(term in message.lower() for term in ["business", "market", "stock", "economy"]):
+                params["category"] = "business"
+            elif any(term in message.lower() for term in ["entertainment", "celebrity", "movie", "film", "tv", "show"]):
+                params["category"] = "entertainment"
+            elif any(term in message.lower() for term in ["health", "medical", "covid", "disease"]):
+                params["category"] = "health"
+            elif any(term in message.lower() for term in ["science", "research", "discovery"]):
+                params["category"] = "science"
+            elif any(term in message.lower() for term in ["sports", "game", "match", "tournament"]):
+                params["category"] = "sports"
+            elif any(term in message.lower() for term in ["tech", "technology", "digital", "software", "hardware"]):
+                params["category"] = "technology"
+            
+            # Default to general if no category was matched
+            if not params:
+                params["category"] = "general"
+                
+            # Extract country if mentioned
+            if "us" in message.lower() or "america" in message.lower() or "united states" in message.lower():
+                params["country"] = "us"
+                
+            # Extract search terms for the "q" parameter
+            query_terms = []
+            for term in ["about", "regarding", "on", "related to"]:
+                if term in message.lower():
+                    parts = message.lower().split(term, 1)
+                    if len(parts) > 1:
+                        query_terms.append(parts[1].strip())
+            
+            if query_terms:
+                params["q"] = query_terms[0]
+        
+        # Set default values if needed
+        if not params.get("country") and not params.get("category") and not params.get("q"):
+            params["category"] = "general"
+            if "us" in message.lower() or "america" in message.lower() or "united states" in message.lower():
+                params["country"] = "us"
+        
+        # Add API key and default parameters
+        params["apiKey"] = os.environ.get("NEWS_API_KEY", "your_api_key_here")
+        params["pageSize"] = 5  # Limit to 5 articles for a concise summary
+        
+        # Make the API request
+        logger.info(f"📡 Making news API request with parameters: {params}")
+        news_response = requests.get("https://newsapi.org/v2/top-headlines", params=params)
+        
+        if news_response.status_code != 200:
+            logger.error(f"❗ News API request failed: {news_response.status_code} - {news_response.text}")
+            response = f"Sorry, I couldn't fetch the latest news at the moment. Please try again later."
+            return {
+                "response_text": response,
+                "memory_used": "news",
+                "messages": state["messages"] + [AIMessage(content=response)]
+            }
+        
+        # Process the API response
+        news_data = news_response.json()
+        
+        if news_data["status"] != "ok" or news_data["totalResults"] == 0:
+            logger.warning(f"❗ No news articles found: {news_data}")
+            response = f"I couldn't find any news articles matching your query. Would you like to try a different topic or category?"
+            return {
+                "response_text": response,
+                "memory_used": "news",
+                "messages": state["messages"] + [AIMessage(content=response)]
+            }
+        
+        # Format the news data for summarization
+        articles = news_data["articles"]
+        formatted_articles = []
+        
+        for i, article in enumerate(articles):
+            formatted_articles.append({
+                "index": i + 1,
+                "title": article.get("title", "No title"),
+                "source": article.get("source", {}).get("name", "Unknown source"),
+                "description": article.get("description", "No description available"),
+                "url": article.get("url", ""),
+                "publishedAt": article.get("publishedAt", "")
+            })
+        
+        # Create a prompt for summarizing the news
+        summary_prompt = f"""
+        The user asked about news with this query: "{message}"
+        
+        Here are the top {len(formatted_articles)} news articles matching their query:
+        
+        {json.dumps(formatted_articles, indent=2)}
+        
+        Please provide a very concise summary of these news items in the form of brief bullet points:
+
+            1. Start with a one-sentence overview of the main theme or topic
+            2. Present 2-3 brief bullet points (one line each) highlighting the most important facts
+            3. Each bullet point should be a simple, direct statement without elaborate details
+            4. No need for transitions or connective text between points
+            5. Keep everything extremely concise - the entire response should be short
+            6. Mention sources only when absolutely necessary
+
+        Remember to be conversational but extremely brief in your response.
+        """
+        
+        # Generate the summary using the LLM
+        response = ask_groq(summary_prompt)
+        logger.info("📰 NEWS → Generated news summary")
+        
+        if is_error(response):
+            logger.error(f"❗ LLM error in NEWS: {response}")
+            response = "Sorry, I had trouble summarizing the news. Please try again later."
+        
+        return {
+            "response_text": response,
+            "memory_used": "news",
+            "messages": state["messages"] + [AIMessage(content=response)]
+        }
+        
+    except Exception as e:
+        logger.error(f"❗ Error processing news request: {e}", exc_info=True)
+        response = f"Sorry, I encountered an error while fetching news: {str(e)}"
         return {
             "response_text": response,
             "memory_used": "none",
