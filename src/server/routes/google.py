@@ -20,7 +20,7 @@ SCOPES = [
 ]
 
 # Must match exactly what you set in Google Cloud Console
-REDIRECT_URI = "https://b1a7-73-231-49-218.ngrok-free.app/oauth/callback"
+REDIRECT_URI = "https://7420-73-231-49-218.ngrok-free.app/oauth/callback"
 
 # Save tokens here
 TOKEN_FILE = BASE_DIR / "google_token.pickle"
