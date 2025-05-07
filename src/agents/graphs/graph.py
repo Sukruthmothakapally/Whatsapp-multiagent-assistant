@@ -15,6 +15,7 @@ from agents.graphs.nodes import (
     check_media_response_node,
     generate_image_node,
     generate_speech_node,
+    summarize_today_node
 )
 from agents.graphs.state import RouterState
 
@@ -36,7 +37,8 @@ def create_router_graph():
     graph_builder.add_node("check_media_response_node", check_media_response_node)
     graph_builder.add_node("generate_image_node", generate_image_node)
     graph_builder.add_node("generate_speech_node", generate_speech_node)
-    graph_builder.add_node("final_node", lambda x: x)  # Identity node to end the graph
+    graph_builder.add_node("summarize_today_node", summarize_today_node)  
+    graph_builder.add_node("final_node", lambda x: x)
     
     # Define the flow
     # Start with processing the media
@@ -52,6 +54,7 @@ def create_router_graph():
     graph_builder.add_conditional_edges("direct_response_node", has_response)
     graph_builder.add_conditional_edges("short_term_memory_node", has_response)
     graph_builder.add_conditional_edges("no_memory_node", has_response)
+    graph_builder.add_conditional_edges("summarize_today_node", has_response)  # Add the new conditional edge
     
     # After memory update, check if the response should be converted to a different media type
     graph_builder.add_edge("update_memory_node", "check_media_response_node")
@@ -65,7 +68,7 @@ def create_router_graph():
     graph_builder.add_edge("generate_speech_node", END)
     graph_builder.add_edge("final_node", END)
     
-    return graph_builder
+    return graph_builder 
 
 # Compiled graph for use
 router_graph = create_router_graph().compile()
