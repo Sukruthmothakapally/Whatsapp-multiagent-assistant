@@ -9,6 +9,10 @@ from pathlib import Path
 # Base URL for the API
 BASE_URL = "http://localhost:8000"  # Change if your server runs on a different port
 
+# Increase timeout for HTTP requests
+# This will give more time for API responses to be received
+TIMEOUT_SECONDS = 30
+
 @task(name="Fetch Gmail Messages", retries=3, retry_delay_seconds=5)
 async def fetch_gmail_messages():
     """
@@ -17,14 +21,25 @@ async def fetch_gmail_messages():
     logger = get_run_logger()
     logger.info("Fetching Gmail messages")
     
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{BASE_URL}/api/google/gmail/me")
-        if response.status_code != 200:
-            logger.error(f"Failed to fetch Gmail messages: {response.text}")
-            raise Exception(f"Failed to fetch Gmail messages: {response.text}")
-        
-        logger.info(f"Successfully fetched {response.json().get('count', 0)} Gmail messages")
-        return response.json()
+    try:
+        # Use increased timeout to prevent ReadTimeout errors
+        async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT_SECONDS)) as client:
+            logger.info(f"Sending request to {BASE_URL}/api/google/gmail/me")
+            response = await client.get(f"{BASE_URL}/api/google/gmail/me")
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to fetch Gmail messages: {response.text}")
+                raise Exception(f"Failed to fetch Gmail messages: {response.text}")
+            
+            data = response.json()
+            logger.info(f"Successfully fetched {data.get('count', 0)} Gmail messages")
+            return data
+    except httpx.ReadTimeout:
+        logger.error(f"Request timed out while fetching Gmail messages. Consider increasing timeout value.")
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching Gmail messages: {str(e)}")
+        raise
 
 @task(name="Filter Gmail Data")
 def filter_gmail_data(gmail_data):
@@ -57,14 +72,25 @@ async def fetch_calendar_events():
     logger = get_run_logger()
     logger.info("Fetching Calendar events")
     
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{BASE_URL}/api/google/calendar/me")
-        if response.status_code != 200:
-            logger.error(f"Failed to fetch Calendar events: {response.text}")
-            raise Exception(f"Failed to fetch Calendar events: {response.text}")
-        
-        logger.info(f"Successfully fetched {response.json().get('count', 0)} Calendar events")
-        return response.json()
+    try:
+        # Use increased timeout to prevent ReadTimeout errors
+        async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT_SECONDS)) as client:
+            logger.info(f"Sending request to {BASE_URL}/api/google/calendar/me")
+            response = await client.get(f"{BASE_URL}/api/google/calendar/me")
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to fetch Calendar events: {response.text}")
+                raise Exception(f"Failed to fetch Calendar events: {response.text}")
+            
+            data = response.json()
+            logger.info(f"Successfully fetched {data.get('count', 0)} Calendar events")
+            return data
+    except httpx.ReadTimeout:
+        logger.error(f"Request timed out while fetching Calendar events. Consider increasing timeout value.")
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching Calendar events: {str(e)}")
+        raise
 
 @task(name="Filter Calendar Data")
 def filter_calendar_data(calendar_data):
@@ -98,14 +124,25 @@ async def fetch_tasks():
     logger = get_run_logger()
     logger.info("Fetching Tasks")
     
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{BASE_URL}/api/google/tasks/me")
-        if response.status_code != 200:
-            logger.error(f"Failed to fetch Tasks: {response.text}")
-            raise Exception(f"Failed to fetch Tasks: {response.text}")
-        
-        logger.info(f"Successfully fetched {response.json().get('count', 0)} Tasks")
-        return response.json()
+    try:
+        # Use increased timeout to prevent ReadTimeout errors
+        async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT_SECONDS)) as client:
+            logger.info(f"Sending request to {BASE_URL}/api/google/tasks/me")
+            response = await client.get(f"{BASE_URL}/api/google/tasks/me")
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to fetch Tasks: {response.text}")
+                raise Exception(f"Failed to fetch Tasks: {response.text}")
+            
+            data = response.json()
+            logger.info(f"Successfully fetched {data.get('count', 0)} Tasks")
+            return data
+    except httpx.ReadTimeout:
+        logger.error(f"Request timed out while fetching Tasks. Consider increasing timeout value.")
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching Tasks: {str(e)}")
+        raise
 
 @task(name="Filter Tasks Data")
 def filter_tasks_data(tasks_data):
@@ -163,29 +200,38 @@ async def google_data_etl():
     today = datetime.now().strftime("%Y-%m-%d")
     filename = f"{today}.json"
     
-    # Extract data from Gmail, Calendar, and Tasks
-    gmail_data = await fetch_gmail_messages()
-    calendar_data = await fetch_calendar_events()
-    tasks_data = await fetch_tasks()
-    
-    # Transform the data
-    filtered_gmail = filter_gmail_data(gmail_data)
-    filtered_calendar = filter_calendar_data(calendar_data)
-    filtered_tasks = filter_tasks_data(tasks_data)
-    
-    # Combine all data
-    combined_data = {
-        "gmail": filtered_gmail,
-        "calendar": filtered_calendar,
-        "tasks": filtered_tasks,
-        "extracted_at": datetime.now().isoformat()
-    }
-    
-    # Load data to file
-    file_path = store_data(combined_data, filename)
-    
-    logger.info(f"ETL process completed successfully. Data stored in {file_path}")
-    return file_path
+    try:
+        # Extract data from Gmail, Calendar, and Tasks
+        logger.info("Starting data extraction phase...")
+        gmail_data = await fetch_gmail_messages()
+        
+        calendar_data = await fetch_calendar_events()
+        
+        tasks_data = await fetch_tasks()
+        
+        # Transform the data
+        logger.info("Starting data transformation phase...")
+        filtered_gmail = filter_gmail_data(gmail_data)
+        filtered_calendar = filter_calendar_data(calendar_data)
+        filtered_tasks = filter_tasks_data(tasks_data)
+        
+        # Combine all data
+        combined_data = {
+            "gmail": filtered_gmail,
+            "calendar": filtered_calendar,
+            "tasks": filtered_tasks,
+            "extracted_at": datetime.now().isoformat()
+        }
+        
+        # Load data to file
+        logger.info("Starting data loading phase...")
+        file_path = store_data(combined_data, filename)
+        
+        logger.info(f"ETL process completed successfully. Data stored in {file_path}")
+        return file_path
+    except Exception as e:
+        logger.error(f"ETL process failed: {str(e)}")
+        raise
 
 if __name__ == "__main__":
     import asyncio
@@ -193,20 +239,7 @@ if __name__ == "__main__":
     
     if len(sys.argv) > 1 and sys.argv[1] == "serve":
         # Deploy the flow as a service
-        # This will create a deployment with a schedule and start a worker to execute it
-        from prefect.deployments import Deployment
         from prefect.server.schemas.schedules import CronSchedule
-        
-        deployment = google_data_etl.to_deployment(
-            name="google-data-daily",
-            description="Daily ETL job to extract Google data (Gmail, Calendar, Tasks)",
-            version="1",
-            tags=["daily", "google-data"],
-            schedule=CronSchedule(
-                cron="0 6 * * *",  # Run at 6:00 AM daily
-                timezone="America/Los_Angeles"  # PST timezone
-            ),
-        )
         
         # Start the flow as a service
         google_data_etl.serve(
@@ -219,6 +252,8 @@ if __name__ == "__main__":
                 timezone="America/Los_Angeles"  # PST timezone
             ),
         )
+        print("Flow is now being served. Press Ctrl+C to stop.")
     else:
         # Run the flow directly
+        print("Running Google Data ETL flow...")
         asyncio.run(google_data_etl())
