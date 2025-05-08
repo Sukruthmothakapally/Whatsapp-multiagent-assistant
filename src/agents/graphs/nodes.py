@@ -73,7 +73,7 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     routing_context = f"""
         You are a routing agent. Your job is to determine the best memory source for answering the user's query.
-        You must return only one of these responses: DIRECT, USE_SHORT_TERM, SUMMARIZE_TODAY, NEWS, or NONE. 
+        You must return only one of these responses: DIRECT, USE_SHORT_TERM, SUMMARIZE_TODAY, NEWS, SEND_EMAIL, or NONE. 
 
         Use this logic:
         1. If the user is stating a fact (e.g., 'I live in New York', 'I am a student'), treat it as DIRECT.
@@ -85,7 +85,10 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
         4. If the user is asking about news, current events, latest headlines, or specific news topics
            (e.g., 'What's happening in the world?', 'Tell me the latest news', 'What's going on in technology?',
            'Any breaking news about climate change?'), return NEWS.
-        5. If the query is generic or unrelated to memory, return NONE.
+        5. If the user is asking to send an email, message, or communication to someone, or if they're dictating
+           an email (e.g., 'Send an email to John', 'Email the team about the meeting', 'Send a message to HR about my leave',
+           'Send this to sarah@example.com', 'Draft an email about the project delay'), return SEND_EMAIL.
+        6. If the query is generic or unrelated to memory, return NONE.
 
         Examples:
         - 'I live in Bangalore' → DIRECT
@@ -96,6 +99,8 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
         - 'What's the latest news?' → NEWS
         - 'Tell me about technology news' → NEWS
         - 'Any updates on the stock market?' → NEWS
+        - 'Send an email to John@gmail.com that the project is ready to be shipped' → SEND_EMAIL
+        - 'Draft a message to suk@gmail.com that I'll be late for the meeting' → SEND_EMAIL
         - 'Tell me a joke' → NONE
 
         User query: {message}
@@ -503,4 +508,98 @@ async def news_node(state: Dict[str, Any]) -> Dict[str, Any]:
             "response_text": response,
             "memory_used": "none",
             "messages": state["messages"] + [AIMessage(content=response)]
+        }
+
+
+async def send_email_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Process user query into email parameters and send an email."""
+    # Get the most recent message
+    message = state["messages"][-1].content
+    
+    # Use LLM to parse the message into email parameters
+    email_context = f"""
+    You are an email assistant that converts user requests into email parameters.
+    Given the user's message, extract the email recipient(s), subject, and body.
+    
+    The output should be a valid JSON object with these fields:
+    - "to": A list of email addresses (strings)
+    - "subject": Email subject line (string)
+    - "body": Email body (string)
+    - "cc": Optional list of CC recipients (can be empty list)
+    - "bcc": Optional list of BCC recipients (can be empty list)
+    
+    Rules:
+    1. Always sign emails from "Sukruth Mothakapally". 
+    2. If the user doesn't specify recipients, ask for recipients.
+    3. If the user doesn't specify a subject, create a relevant subject.
+    4. Format the email body professionally with proper greeting and signature.
+    5. Return ONLY the JSON object, nothing else.
+    
+    Examples:
+    "Send an email to john@example.com about the meeting tomorrow" →
+    {{
+      "to": ["john@example.com"],
+      "subject": "Meeting Tomorrow",
+      "body": "Dear John,\\n\\nI wanted to touch base about our meeting scheduled for tomorrow.\\n\\nBest regards,\\n[Your Name]",
+      "cc": [],
+      "bcc": []
+    }}
+    
+    User message: {message}
+    """
+    
+    try:
+        # Get email parameters from LLM
+        email_params_str = ask_groq(email_context)
+        logger.info("📧 SEND_EMAIL → LLM parsed parameters")
+        
+        # If not a valid JSON, return an error
+        try:
+            email_params = json.loads(email_params_str)
+            
+            # Check for required fields
+            if not email_params.get("to") or not isinstance(email_params["to"], list) or len(email_params["to"]) == 0:
+                return {
+                    "response_text": "I need at least one email recipient. Who would you like to send this email to?",
+                    "memory_used": "email",
+                    "messages": state["messages"] + [AIMessage(content="I need at least one email recipient. Who would you like to send this email to?")]
+                }
+                
+            # Prepare the request to the email API
+            from server.services.google import google_service
+            
+            message_id = google_service.send_email(
+                to=email_params.get("to", []),
+                subject=email_params.get("subject", ""),
+                body=email_params.get("body", ""),
+                cc=email_params.get("cc", []),
+                bcc=email_params.get("bcc", [])
+            )
+
+            logger.info(f"✅ Email sent successfully with ID: {message_id}")
+            
+            # Create success response
+            recipients = ", ".join(email_params.get("to", []))
+            response = f"✅ Email sent successfully to {recipients}!\n\nSubject: {email_params.get('subject', '')}"
+            
+            return {
+                "response_text": response,
+                "memory_used": "email",
+                "messages": state["messages"] + [AIMessage(content=response)]
+            }
+            
+        except json.JSONDecodeError:
+            logger.error(f"❗ Failed to parse email parameters: {email_params_str}")
+            return {
+                "response_text": "I had trouble understanding your email request. Please provide clear details about who to send the email to and what it should contain.",
+                "memory_used": "email",
+                "messages": state["messages"] + [AIMessage(content="I had trouble understanding your email request. Please provide clear details about who to send the email to and what it should contain.")]
+            }
+            
+    except Exception as e:
+        logger.error(f"❗ Error in SEND_EMAIL: {str(e)}")
+        return {
+            "response_text": f"Sorry, I couldn't send the email: {str(e)}",
+            "memory_used": "email",
+            "messages": state["messages"] + [AIMessage(content=f"Sorry, I couldn't send the email: {str(e)}")]
         }
