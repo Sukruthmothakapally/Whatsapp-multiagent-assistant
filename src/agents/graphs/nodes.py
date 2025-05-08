@@ -73,7 +73,7 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     routing_context = f"""
         You are a routing agent. Your job is to determine the best memory source for answering the user's query.
-        You must return only one of these responses: DIRECT, USE_SHORT_TERM, SUMMARIZE_TODAY, NEWS, SEND_EMAIL, or NONE. 
+        You must return only one of these responses: DIRECT, USE_SHORT_TERM, SUMMARIZE_TODAY, NEWS, SEND_EMAIL, CREATE_EVENT, or NONE. 
 
         Use this logic:
         1. If the user is stating a fact (e.g., 'I live in New York', 'I am a student'), treat it as DIRECT.
@@ -88,7 +88,10 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
         5. If the user is asking to send an email, message, or communication to someone, or if they're dictating
            an email (e.g., 'Send an email to John', 'Email the team about the meeting', 'Send a message to HR about my leave',
            'Send this to sarah@example.com', 'Draft an email about the project delay'), return SEND_EMAIL.
-        6. If the query is generic or unrelated to memory, return NONE.
+        6. If the user is asking to create a calendar event, schedule a meeting, or add something to their agenda
+           (e.g., 'Schedule a meeting tomorrow', 'Add an event to my calendar', 'Create an appointment',
+           'Set up a team meeting for Friday'), return CREATE_EVENT.
+        7. If the query is generic or unrelated to memory, return NONE.
 
         Examples:
         - 'I live in Bangalore' → DIRECT
@@ -101,6 +104,8 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
         - 'Any updates on the stock market?' → NEWS
         - 'Send an email to John@gmail.com that the project is ready to be shipped' → SEND_EMAIL
         - 'Draft a message to suk@gmail.com that I'll be late for the meeting' → SEND_EMAIL
+        - 'Schedule a meeting with the team tomorrow' → CREATE_EVENT
+        - 'Add a doctor's appointment to my calendar' → CREATE_EVENT
         - 'Tell me a joke' → NONE
 
         User query: {message}
@@ -602,4 +607,117 @@ async def send_email_node(state: Dict[str, Any]) -> Dict[str, Any]:
             "response_text": f"Sorry, I couldn't send the email: {str(e)}",
             "memory_used": "email",
             "messages": state["messages"] + [AIMessage(content=f"Sorry, I couldn't send the email: {str(e)}")]
+        }
+
+
+async def calendar_event_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Process user query into calendar event parameters and create an event."""
+    # Get the most recent message
+    message = state["messages"][-1].content
+    
+    # Use LLM to parse the message into event parameters
+    calendar_context = f"""
+        You are a calendar assistant. Convert the user's request into event parameters as a valid JSON with:
+        - "summary": Event title (required)
+        - "location": Event location (optional)
+        - "description": Event details (optional)
+        - "start_time": Start time in ISO format (YYYY-MM-DDTHH:MM:SSZ) (required)
+        - "end_time": End time in ISO format (YYYY-MM-DDTHH:MM:SSZ) (required)
+        - "attendees": List of email addresses (optional)
+        - "calendar_id": "primary" (always use this value)
+
+        Use "Z" suffix for times to indicate UTC timezone. Infer reasonable duration if end time not specified.
+        Return ONLY the JSON object.
+
+        Example:
+        "Schedule a team meeting tomorrow at 2pm" →
+        {{
+        "summary": "Team Meeting",
+        "location": "",
+        "description": "Regular team meeting",
+        "start_time": "2025-05-08T14:00:00Z",
+        "end_time": "2025-05-08T15:00:00Z", 
+        "attendees": [],
+        "calendar_id": "primary"
+        }}
+
+        User message: {message}
+        """
+    
+    try:
+        # Get event parameters from LLM
+        event_params_str = ask_groq(calendar_context)
+        logger.info("📅 CREATE_EVENT → LLM parsed parameters")
+        
+        # Parse the JSON parameters
+        try:
+            event_params = json.loads(event_params_str)
+            
+            # Check for required fields
+            required_fields = ["summary", "start_time", "end_time"]
+            missing_fields = [field for field in required_fields if not event_params.get(field)]
+            
+            if missing_fields:
+                missing_str = ", ".join(missing_fields)
+                return {
+                    "response_text": f"I need more information to create this event. Please provide {missing_str}.",
+                    "memory_used": "calendar",
+                    "messages": state["messages"] + [AIMessage(content=f"I need more information to create this event. Please provide {missing_str}.")]
+                }
+                
+            # Parse datetime strings to Python datetime objects
+            from datetime import datetime
+            start_time = datetime.fromisoformat(event_params["start_time"].replace("Z", "+00:00"))
+            end_time = datetime.fromisoformat(event_params["end_time"].replace("Z", "+00:00"))
+            
+            # Prepare the request to the calendar API
+            from server.services.google import google_service
+            
+            event_id = google_service.create_calendar_event(
+                summary=event_params["summary"],
+                start_time=start_time,
+                end_time=end_time,
+                location=event_params.get("location", ""),
+                description=event_params.get("description", ""),
+                attendees=event_params.get("attendees", []),
+                calendar_id="primary"
+            )
+            
+            # Log the event ID for troubleshooting
+            logger.info(f"✅ Calendar event created successfully with ID: {event_id}")
+            
+            # Format start time for user-friendly response
+            start_time_str = start_time.strftime("%A, %B %d at %I:%M %p")
+            
+            # Create success response
+            response = f"✅ Event created successfully!\n\n📌 {event_params['summary']}\n🕒 {start_time_str}"
+            
+            if event_params.get("location"):
+                response += f"\n📍 {event_params['location']}"
+                
+            if event_params.get("attendees") and len(event_params["attendees"]) > 0:
+                attendees_str = ", ".join(event_params["attendees"])
+                response += f"\n👥 Attendees: {attendees_str}"
+            
+            return {
+                "response_text": response,
+                "memory_used": "calendar",
+                "messages": state["messages"] + [AIMessage(content=response)],
+                "calendar_event_id": event_id
+            }
+            
+        except json.JSONDecodeError:
+            logger.error(f"❗ Failed to parse event parameters: {event_params_str}")
+            return {
+                "response_text": "I had trouble understanding your event request. Please provide clear details about the event title, time, and any other information.",
+                "memory_used": "calendar",
+                "messages": state["messages"] + [AIMessage(content="I had trouble understanding your event request. Please provide clear details about the event title, time, and any other information.")]
+            }
+            
+    except Exception as e:
+        logger.error(f"❗ Error in CREATE_EVENT: {str(e)}")
+        return {
+            "response_text": f"Sorry, I couldn't create the calendar event: {str(e)}",
+            "memory_used": "calendar",
+            "messages": state["messages"] + [AIMessage(content=f"Sorry, I couldn't create the calendar event: {str(e)}")]
         }

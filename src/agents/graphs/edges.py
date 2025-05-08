@@ -1,6 +1,6 @@
 from typing import Literal, Dict, Any
 
-def route_by_decision(state: Dict[str, Any]) -> Literal["direct_response_node", "short_term_memory_node", "no_memory_node", "summarize_today_node", "news_node", "send_email_node"]:
+def route_by_decision(state: Dict[str, Any]) -> Literal["direct_response_node", "short_term_memory_node", "no_memory_node", "summarize_today_node", "news_node", "send_email_node", "calendar_event_node"]:
     """Route based on the decision from the routing agent."""
     # If routing_decision is already set by a previous node, use it
     if "routing_decision" in state and state["routing_decision"]:
@@ -18,6 +18,8 @@ def route_by_decision(state: Dict[str, Any]) -> Literal["direct_response_node", 
         return "news_node"
     elif decision == "SEND_EMAIL":
         return "send_email_node"
+    elif decision == "CREATE_EVENT":
+        return "calendar_event_node"
     elif decision == "NONE":
         return "no_memory_node"
     else:
