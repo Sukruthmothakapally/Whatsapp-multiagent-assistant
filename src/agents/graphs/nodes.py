@@ -73,7 +73,7 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     routing_context = f"""
         You are a routing agent. Your job is to determine the best memory source for answering the user's query.
-        You must return only one of these responses: DIRECT, USE_SHORT_TERM, SUMMARIZE_TODAY, NEWS, SEND_EMAIL, CREATE_EVENT, or NONE. 
+        You must return only one of these responses: DIRECT, USE_SHORT_TERM, SUMMARIZE_TODAY, NEWS, SEND_EMAIL, CREATE_EVENT, CREATE_TASK, or NONE. 
 
         Use this logic:
         1. If the user is stating a fact (e.g., 'I live in New York', 'I am a student'), treat it as DIRECT.
@@ -91,7 +91,10 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
         6. If the user is asking to create a calendar event, schedule a meeting, or add something to their agenda
            (e.g., 'Schedule a meeting tomorrow', 'Add an event to my calendar', 'Create an appointment',
            'Set up a team meeting for Friday'), return CREATE_EVENT.
-        7. If the query is generic or unrelated to memory, return NONE.
+        7.  If the user is asking to create a task, add a to-do item, or remember something to do
+           (e.g., 'Add a task to buy groceries', 'Remind me to call mom tomorrow', 'Create a to-do to finish the report',
+           'Add finish homework to my tasks'), return CREATE_TASK.
+        8. If the query is generic or unrelated to memory, return NONE.
 
         Examples:
         - 'I live in Bangalore' → DIRECT
@@ -106,6 +109,8 @@ async def routing_decision_node(state: Dict[str, Any]) -> Dict[str, Any]:
         - 'Draft a message to suk@gmail.com that I'll be late for the meeting' → SEND_EMAIL
         - 'Schedule a meeting with the team tomorrow' → CREATE_EVENT
         - 'Add a doctor's appointment to my calendar' → CREATE_EVENT
+        - 'Remind me to submit my assignment by Friday' → CREATE_TASK
+        - 'Create a to-do item for calling the dentist' → CREATE_TASK
         - 'Tell me a joke' → NONE
 
         User query: {message}
@@ -720,4 +725,99 @@ async def calendar_event_node(state: Dict[str, Any]) -> Dict[str, Any]:
             "response_text": f"Sorry, I couldn't create the calendar event: {str(e)}",
             "memory_used": "calendar",
             "messages": state["messages"] + [AIMessage(content=f"Sorry, I couldn't create the calendar event: {str(e)}")]
+        }
+    
+
+async def task_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """Process user query into task parameters and create a task."""
+    # Get the most recent message
+    message = state["messages"][-1].content
+    
+    # Use LLM to parse the message into task parameters
+    task_context = f"""
+        You are a task assistant. Convert the user's request into task parameters as a valid JSON with:
+        - "title": Task title (required)
+        - "notes": Additional details (optional)
+        - "due_date": Due date in ISO format (YYYY-MM-DDT00:00:00Z) (optional)
+
+        Return ONLY the JSON object.
+
+        Example:
+        "Add a task to finish the report by next Friday" →
+        {{
+        "title": "Finish the report",
+        "notes": "Complete and submit report",
+        "due_date": "2025-05-09T00:00:00Z"
+        }}
+
+        User message: {message}
+        """
+    
+    try:
+        # Get task parameters from LLM
+        task_params_str = ask_groq(task_context)
+        logger.info("✅ CREATE_TASK → LLM parsed parameters")
+        
+        # Parse the JSON parameters
+        try:
+            task_params = json.loads(task_params_str)
+            
+            # Check for required fields
+            if not task_params.get("title"):
+                return {
+                    "response_text": "I need a task title to create this task. What would you like me to add to your task list?",
+                    "memory_used": "task",
+                    "messages": state["messages"] + [AIMessage(content="I need a task title to create this task. What would you like me to add to your task list?")]
+                }
+                
+            # Parse due_date if provided
+            due_date = None
+            if task_params.get("due_date"):
+                from datetime import datetime
+                due_date = datetime.fromisoformat(task_params["due_date"].replace("Z", "+00:00"))
+            
+            # Prepare the request to the tasks API
+            from server.services.google import google_service
+            
+            task_id = google_service.create_task(
+                title=task_params["title"],
+                notes=task_params.get("notes", ""),
+                due_date=due_date,
+                task_list_id=None  # Let the service find the default list
+            )
+            
+            # Log the task ID for troubleshooting
+            logger.info(f"✅ Task created successfully with ID: {task_id}")
+            
+            # Create success response
+            response = f"✅ Task added successfully: \"{task_params['title']}\""
+            
+            if due_date:
+                due_date_str = due_date.strftime("%A, %B %d")
+                response += f"\n📅 Due: {due_date_str}"
+                
+            if task_params.get("notes"):
+                response += f"\n📝 Notes: {task_params['notes']}"
+            
+            return {
+                "response_text": response,
+                "memory_used": "task",
+                "messages": state["messages"] + [AIMessage(content=response)],
+                "task_id": task_id
+            }
+            
+        except json.JSONDecodeError:
+            logger.error(f"❗ Failed to parse task parameters: {task_params_str}")
+            return {
+                "response_text": "I had trouble understanding your task request. Please provide a clear task title and any due date or notes you'd like to include.",
+                "memory_used": "task",
+                "messages": state["messages"] + [AIMessage(content="I had trouble understanding your task request. Please provide a clear task title and any due date or notes you'd like to include.")]
+            }
+            
+    except Exception as e:
+        logger.error(f"❗ Error in CREATE_TASK: {str(e)}")
+        return {
+            "response_text": f"Sorry, I couldn't create the task: {str(e)}",
+            "memory_used": "task",
+            "messages": state["messages"] + [AIMessage(content=f"Sorry, I couldn't create the task: {str(e)}")]
         }

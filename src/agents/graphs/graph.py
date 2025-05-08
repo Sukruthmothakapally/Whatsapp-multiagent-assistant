@@ -18,7 +18,8 @@ from agents.graphs.nodes import (
     summarize_today_node,
     news_node,
     send_email_node,
-    calendar_event_node
+    calendar_event_node,
+    task_node
 )
 from agents.graphs.state import RouterState
 
@@ -44,6 +45,7 @@ def create_router_graph():
     graph_builder.add_node("news_node", news_node)
     graph_builder.add_node("send_email_node", send_email_node)
     graph_builder.add_node("calendar_event_node", calendar_event_node)
+    graph_builder.add_node("task_node", task_node)
     graph_builder.add_node("final_node", lambda x: x)  # Identity node to end the graph
     
     # Define the flow
@@ -64,6 +66,7 @@ def create_router_graph():
     graph_builder.add_conditional_edges("news_node", has_response)
     graph_builder.add_conditional_edges("send_email_node", has_response)
     graph_builder.add_conditional_edges("calendar_event_node", has_response)
+    graph_builder.add_conditional_edges("task_node", has_response)
     
     # After memory update, check if the response should be converted to a different media type
     graph_builder.add_edge("update_memory_node", "check_media_response_node")
