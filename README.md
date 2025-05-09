@@ -48,6 +48,24 @@ Receive a morning summary of:
 
 ---
 
+## 🧰 Technology Stack
+
+| Category              | Technology                     |
+|----------------------|---------------------------------|
+| Framework            | FastAPI                         |
+| Multi-Agent System   | LangGraph (nodes, edges, graph), LangChain |
+| Text Agent           | Grok                            |
+| Voice Agent                | ElevenLabs (TTS), Whisper (STT) |
+| Image Agent                | Llama (ITT), Together AI (TTI)  |
+| Memory               | SQLite (short-term), Qdrant (RAG)|
+| Data Orchestration        | Prefect                         |
+| UI                   | Chainlit                        |
+| Scheduling           | Cron jobs                       |
+| Exposure             | Ngrok (HTTPS tunnel)            |
+| Integrations         | Whatsapp, Gmail, Calendar, Tasks, News API|
+
+---
+
 ## 🧱 Architecture
 
 The system follows a sophisticated multi-agent architecture implemented with LangGraph.
@@ -89,24 +107,6 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 #### 💬 WhatsApp Integration
 - Webhook handlers for incoming messages
 - Media download + response formatting
-
----
-
-## 🧰 Technology Stack
-
-| Category              | Technology                     |
-|----------------------|---------------------------------|
-| Framework            | FastAPI                         |
-| Multi-Agent System   | LangGraph (nodes, edges, graph) |
-| Text Agent           | Grok                            |
-| Voice Agent                | ElevenLabs (TTS), Whisper (STT) |
-| Image Agent                | Llama (ITT), Together AI (TTI)  |
-| Memory               | SQLite (short-term), Qdrant (RAG)|
-| Data Orchestration        | Prefect                         |
-| UI                   | Chainlit                        |
-| Scheduling           | Cron jobs                       |
-| Exposure             | Ngrok (HTTPS tunnel)            |
-| Integrations         | Whatsapp, Gmail, Calendar, Tasks, News API|
 
 ---
 
