@@ -99,14 +99,14 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 | Framework            | FastAPI                         |
 | Multi-Agent System   | LangGraph (nodes, edges, graph) |
 | Text Agent           | Grok                            |
-| Voice                | ElevenLabs (TTS), Whisper (STT) |
-| Image                | Llama (ITT), Together AI (TTI)  |
+| Voice Agent                | ElevenLabs (TTS), Whisper (STT) |
+| Image Agent                | Llama (ITT), Together AI (TTI)  |
 | Memory               | SQLite (short-term), Qdrant (RAG)|
-| Orchestration        | Prefect                         |
+| Data Orchestration        | Prefect                         |
 | UI                   | Chainlit                        |
 | Scheduling           | Cron jobs                       |
 | Exposure             | Ngrok (HTTPS tunnel)            |
-| Integrations         | Gmail, Calendar, Tasks, News API|
+| Integrations         | Whatsapp, Gmail, Calendar, Tasks, News API|
 
 ---
 
