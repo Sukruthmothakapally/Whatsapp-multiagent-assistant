@@ -134,16 +134,7 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 
 ### 🧭 Graph Execution Flow
 
-- **Entry Point**: `route_message()` handles user input
-- **Media Processing**: Converts audio/image to text
-- **Routing**: Classifies query type
-- **Agent Selection**:
-  - Direct response
-  - Memory-enhanced
-  - Specialized (Email, Task, News, Summary, etc.)
-- **Memory Update**: Persists relevant context
-- **Media Conversion**: Converts output if needed (TTS/TTI)
-- **Response Delivery**: Returns formatted reply to WhatsApp
+![langgraph_workflow](images/langgraph.png)
 
 ---
 
