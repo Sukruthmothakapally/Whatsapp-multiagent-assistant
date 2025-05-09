@@ -238,7 +238,7 @@ whatsapp-multiagent-assistant/
 └── README.md
 ```
 
-<!-- ## 📲 WhatsApp Business API Setup -->
+## 📲 WhatsApp Business API Setup
 
 - Create Meta Developer account  
 - Set up WhatsApp Business App  
@@ -246,7 +246,7 @@ whatsapp-multiagent-assistant/
 - Verify with `WHATSAPP_VERIFY_TOKEN`  
 - Subscribe to events: `messages`, `message_reactions`, etc.
 
-<!-- ## 💡 Use Cases -->
+## 💡 Use Cases
 
 - **Email**: “Send an email to john@example.com about the meeting tomorrow”  
 - **Calendar**: “Schedule a meeting next Tuesday at 2 PM”  
@@ -257,6 +257,6 @@ whatsapp-multiagent-assistant/
 - **News**: “What’s the latest AI news?”  
 - **Memory**: “What did I say earlier about my project?”
 
-<!-- ## 📄 License -->
+## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for more details.
