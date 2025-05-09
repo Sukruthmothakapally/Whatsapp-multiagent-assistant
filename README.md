@@ -197,75 +197,66 @@ TOGETHER_API_KEY=your_together_key
 GROQ_API_KEY=your_groq_key
 ```
 
+```bash
 whatsapp-multiagent-assistant/
 ├── src/
-   ├── agents/
-   │   ├── audio_agents/
-   │   │   ├── speech_to_text.py
-   │   │   └── text_to_speech.py
-   │   ├── image_agents/
-   │   │   ├── image_to_text.py
-   │   │   └── text_to_image.py
-   │   ├── text_agents/
-   │   │   ├── groq.py
-   │   │   └── router.py
-   │   └── graphs/
-   │       ├── edges.py
-   │       ├── nodes.py
-   │       ├── state.py
-   │       └── graph.py
-   ├── memory/
-   │   ├── short_term.py
-   │   └── long_term.py
-   ├── server/
-   │   ├── app.py
-   │   ├── routes/
-   │   │   ├── chat.py
-   │   │   ├── google.py
-   │   │   └── webhook.py
-   │   ├── services/
-   │   │   ├── whatsapp.py
-   │   │   ├── media.py
-   │   │   └── google_api.py
-   │   ├── modelss.py
-   │   └── config.py
-   ├── prefect/
-   │   └── etl_daily_summary.py
-   ├── ui/
-   │   └── chainlit_app.py
+│   ├── agents/
+│   │   ├── audio_agents/
+│   │   │   ├── speech_to_text.py
+│   │   │   └── text_to_speech.py
+│   │   ├── image_agents/
+│   │   │   ├── image_to_text.py
+│   │   │   └── text_to_image.py
+│   │   ├── text_agents/
+│   │   │   ├── groq.py
+│   │   │   └── router.py
+│   │   └── graphs/
+│   │       ├── edges.py
+│   │       ├── nodes.py
+│   │       ├── state.py
+│   │       └── graph.py
+│   ├── memory/
+│   │   ├── short_term.py
+│   │   └── long_term.py
+│   ├── server/
+│   │   ├── app.py
+│   │   ├── routes/
+│   │   │   ├── chat.py
+│   │   │   ├── google.py
+│   │   │   └── webhook.py
+│   │   ├── services/
+│   │   │   ├── whatsapp.py
+│   │   │   ├── media.py
+│   │   │   └── google_api.py
+│   │   ├── modelss.py
+│   │   └── config.py
+│   ├── prefect/
+│   │   └── etl_daily_summary.py
+│   ├── ui/
+│   │   └── chainlit_app.py
 ├── requirements.txt
 └── README.md
+```
 
-📲 WhatsApp Business API Setup
-Create Meta Developer account
+<!-- ## 📲 WhatsApp Business API Setup -->
 
-Set up WhatsApp Business App
+- Create Meta Developer account  
+- Set up WhatsApp Business App  
+- Configure Webhook URL using `ngrok`  
+- Verify with `WHATSAPP_VERIFY_TOKEN`  
+- Subscribe to events: `messages`, `message_reactions`, etc.
 
-Configure Webhook URL using ngrok
+<!-- ## 💡 Use Cases -->
 
-Verify with WHATSAPP_VERIFY_TOKEN
+- **Email**: “Send an email to john@example.com about the meeting tomorrow”  
+- **Calendar**: “Schedule a meeting next Tuesday at 2 PM”  
+- **Task**: “Add a task to submit report by Friday”  
+- **Voice**: [Send voice message] → Transcribe & respond  
+- **Image**: [Send document photo] → Text extraction  
+- **Daily Summary**: “Send me today's summary”  
+- **News**: “What’s the latest AI news?”  
+- **Memory**: “What did I say earlier about my project?”
 
-Subscribe to events: messages, message_reactions, etc.
+<!-- ## 📄 License -->
 
-💡 Use Cases
-Email: “Send an email to john@example.com about the meeting tomorrow”
-
-Calendar: “Schedule a meeting next Tuesday at 2 PM”
-
-Task: “Add a task to submit report by Friday”
-
-Voice: [Send voice message] → Transcribe & respond
-
-Image: [Send document photo] → Text extraction
-
-Daily Summary: “Send me today's summary”
-
-News: “What’s the latest AI news?”
-
-Memory: “What did I say earlier about my project?”
-
-📄 License
-This project is licensed under the MIT License. See the LICENSE file for more details.
-
-
-overview, key features, architecture, tech stack, API endpoints, setup guide, use cases, project structure, license
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for more details.
