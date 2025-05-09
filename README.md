@@ -63,6 +63,7 @@ Receive a morning summary of:
 | Scheduling           | Cron jobs                       |
 | Exposure             | Ngrok (HTTPS tunnel)            |
 | Integrations         | Whatsapp, Gmail, Calendar, Tasks, News API|
+| Containerization     | Docker & Docker Compose         |
 
 ---
 
@@ -260,7 +261,15 @@ whatsapp-multiagent-assistant/
   cd src/prefect
   prefect server start
   ```
-  
+(Alternatively: You can run the server with Docker)
+   **Docker Setup**
+   ```bash
+   # Build and start all services
+   docker-compose up --build
+   
+   # To stop services
+   docker-compose down
+   ```
 4. **Begin chatting with the WhatsApp test number**
 ---
 ## 💡 Use Cases
