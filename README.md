@@ -149,17 +149,7 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 
 ## 📡 API Endpoints
 
-| Endpoint                          | Method | Description                    |
-|-----------------------------------|--------|--------------------------------|
-| `/webhook`                        | GET/POST | WhatsApp Webhook              |
-| `/chat`                           | POST   | Flexible multimodal chat      |
-| `/api/google/auth`               | GET    | Google OAuth flow             |
-| `/api/google/gmail/me`          | GET    | Retrieve recent emails        |
-| `/api/google/gmail/send`        | POST   | Send an email                 |
-| `/api/google/calendar/me`       | GET    | Get today’s events            |
-| `/api/google/calendar/events`   | POST   | Create calendar event         |
-| `/api/google/tasks/me`          | GET    | Fetch all tasks               |
-| `/api/google/tasks/create`      | POST   | Create a task                 |
+![FastAPI Endpoints](images/fastapi.png)
 
 ---
 
