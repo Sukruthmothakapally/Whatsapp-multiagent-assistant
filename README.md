@@ -179,8 +179,8 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 
 ## 🔐 Environment Configuration
 
-### WhatsApp Config:
-```env
+
+```
 WHATSAPP_VERIFY_TOKEN=your_verify_token
 WHATSAPP_BUSINESS_NUMBER=your_business_phone_number
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
@@ -195,24 +195,44 @@ ELEVENLABS_API_KEY=your_eleven_labs_key
 OPENAI_API_KEY=your_openai_key
 TOGETHER_API_KEY=your_together_key
 GROQ_API_KEY=your_groq_key
+```
 
-whatsapp-multi-agent-assistant/
-├── agents/
-│   ├── audio_agents/
-│   ├── image_agents/
-│   ├── text_agents/
-│   └── graphs/
-├── memory/
-├── server/
-│   ├── app.py
-│   ├── routes/
-│   ├── services/
-│   ├── models/
-│   └── config/
-├── etl/
-│   └── daily_summary_pipeline.py
-├── ui/
-│   └── chainlit_app.py
+whatsapp-multiagent-assistant/
+├── src/
+   ├── agents/
+   │   ├── audio_agents/
+   │   │   ├── speech_to_text.py
+   │   │   └── text_to_speech.py
+   │   ├── image_agents/
+   │   │   ├── image_to_text.py
+   │   │   └── text_to_image.py
+   │   ├── text_agents/
+   │   │   ├── groq.py
+   │   │   └── router.py
+   │   └── graphs/
+   │       ├── edges.py
+   │       ├── nodes.py
+   │       ├── state.py
+   │       └── graph.py
+   ├── memory/
+   │   ├── short_term.py
+   │   └── long_term.py
+   ├── server/
+   │   ├── app.py
+   │   ├── routes/
+   │   │   ├── chat.py
+   │   │   ├── google.py
+   │   │   └── webhook.py
+   │   ├── services/
+   │   │   ├── whatsapp.py
+   │   │   ├── media.py
+   │   │   └── google_api.py
+   │   ├── modelss.py
+   │   └── config.py
+   ├── prefect/
+   │   └── etl_daily_summary.py
+   ├── ui/
+   │   └── chainlit_app.py
 ├── requirements.txt
 └── README.md
 
