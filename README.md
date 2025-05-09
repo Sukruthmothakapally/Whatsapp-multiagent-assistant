@@ -229,14 +229,35 @@ whatsapp-multiagent-assistant/
 
 ## 💡 Use Cases
 
-- **Email**: “Send an email to john@example.com about the meeting tomorrow”  
-- **Calendar**: “Schedule a meeting next Tuesday at 2 PM”  
-- **Task**: “Add a task to submit report by Friday”  
-- **Voice**: [Send voice message] → Transcribe & respond  
-- **Image**: [Send document photo] → Text extraction  
-- **Daily Summary**: “Send me today's summary”  
-- **News**: “What’s the latest AI news?”  
-- **Memory**: “What did I say earlier about my project?”
+- **Email Management**: 
+  - Text: "Draft a proposal to the executive team regarding our Q2 strategy with a Thursday deadline"
+  - Voice: [Audio] "Send Sarah an update about incorporating client feedback on slides 15-22"
+  - Image: [Business card photo] "Schedule a meeting with this contact to discuss AI partnerships"
+
+- **Calendar Orchestration**: 
+  - Text: "Coordinate a cross-functional project kickoff with engineering and design teams for next week"
+  - Voice: [Audio] "Find a time slot for our quarterly review that works for all department heads"
+  - Image: [Screenshot] "Add this event to my calendar and set a reminder 1 hour before"
+
+- **Task Management**: 
+  - Text: "Create a project plan for the website redesign with appropriate team assignments and deadlines"
+  - Voice: [Audio] "Add a high-priority task to investigate the production latency issue before holiday traffic"
+  - Image: [Whiteboard] "Convert this workflow diagram into a structured task list with deadlines"
+
+- **Daily Intelligence**: 
+  - Text: "Compile a personalized briefing of today's activities, meetings, and outstanding tasks"
+  - Voice: [Audio] "Give me a rundown of today's developments on the Anderson project"
+  - Image: [Analytics screenshot] "Include these metrics in today's performance summary"
+
+- **News & Research**: 
+  - Text: "Curate the latest research on AI applications in healthcare, focusing on regulatory compliance"
+  - Voice: [Audio] "Gather analyst reports about the recent industry merger and market implications"
+  - Image: [Report page] "Find updated information that supersedes the trends shown here"
+
+- **Contextual Memory**: 
+  - Text: "Recall our discussions about the authentication framework, including technical decisions made"
+  - Voice: [Audio] "What were the main concerns about our data processing agreement and our solutions?"
+  - Image: [Previous notes] "Compare these requirements with our current implementation plan"
 
 ## 📄 License
 
