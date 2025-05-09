@@ -1,0 +1,20 @@
+# Dockerfile.prefect
+FROM python:3.12-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the entire project directory
+COPY . .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Set environment variable for Prefect API URL
+ENV PREFECT_API_URL=http://prefect-server:4200/api
+
+# Expose the Prefect server port
+EXPOSE 4200
+
+# Start the Prefect server and run prefect_flow.py after a short delay
+CMD ["sh", "-c", "prefect server start --host 0.0.0.0 & sleep 5 && python prefect/prefect_flow.py"]

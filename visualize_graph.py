@@ -28,6 +28,7 @@ from agents.graphs.nodes import (
     routing_decision_node,
     direct_response_node,
     short_term_memory_node,
+    long_term_memory_node,
     no_memory_node,
     fallback_node,
     update_memory_node,
@@ -54,6 +55,7 @@ def create_router_graph():
     graph_builder.add_node("routing_decision_node", routing_decision_node)
     graph_builder.add_node("direct_response_node", direct_response_node)
     graph_builder.add_node("short_term_memory_node", short_term_memory_node)
+    graph_builder.add_node("long_term_memory_node", long_term_memory_node)
     graph_builder.add_node("no_memory_node", no_memory_node)
     graph_builder.add_node("fallback_node", fallback_node)
     graph_builder.add_node("update_memory_node", update_memory_node)
@@ -80,6 +82,7 @@ def create_router_graph():
     # Check if a response was generated, go to fallback if not
     graph_builder.add_conditional_edges("direct_response_node", has_response)
     graph_builder.add_conditional_edges("short_term_memory_node", has_response)
+    graph_builder.add_conditional_edges("long_term_memory_node", has_response)
     graph_builder.add_conditional_edges("no_memory_node", has_response)
     graph_builder.add_conditional_edges("summarize_today_node", has_response)
     graph_builder.add_conditional_edges("news_node", has_response)
@@ -127,7 +130,7 @@ def create_router_graph():
             if route_func == "route_by_decision":
                 # From the code, determine possible destinations by examining node names
                 decision_destinations = [
-                    "direct_response_node", "short_term_memory_node", "no_memory_node",
+                    "direct_response_node", "short_term_memory_node", "long_term_memory_node", "no_memory_node",
                     "summarize_today_node", "news_node", "send_email_node", 
                     "calendar_event_node", "task_node"
                 ]

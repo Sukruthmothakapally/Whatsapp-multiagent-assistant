@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  prefect-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.prefect
+    container_name: prefect-server
+    env_file:
+      - .env
+    ports:
+      - "4200:4200"
+
+  fastapi-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    container_name: fastapi-app
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
