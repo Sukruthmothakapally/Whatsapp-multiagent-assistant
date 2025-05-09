@@ -1,8 +1,8 @@
 # Multi-Agent AI Assistant Integrated with WhatsApp
 
-## 🧠 Overview
+## 📲 Overview
 
-An advanced, multi-modal AI assistant leveraging state-of-the-art technology, integrated seamlessly with WhatsApp to perform complex tasks via natural interactions. Built with **LangChain** and **LangGraph**, the system employs a sophisticated multi-agent architecture capable of processing text, audio, and images to automate:
+An advanced, **multi-modal AI** assistant leveraging state-of-the-art LLMs, integrated seamlessly with WhatsApp to perform complex tasks via natural interactions. Built with **LangChain** and **LangGraph**, the system employs a scalable **multi-agent** architecture capable of processing text, audio, and images to automate:
 
 - Email management
 - Calendar scheduling
@@ -12,7 +12,7 @@ An advanced, multi-modal AI assistant leveraging state-of-the-art technology, in
 
 ---
 
-## ✨ Key Features
+## 🤖 Key Features
 
 ### 🔗 Multi-Modal Communication
 - Interact through text, voice messages, or images directly in WhatsApp
@@ -149,17 +149,7 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 
 ## 📡 API Endpoints
 
-| Endpoint                          | Method | Description                    |
-|-----------------------------------|--------|--------------------------------|
-| `/webhook`                        | GET/POST | WhatsApp Webhook              |
-| `/chat`                           | POST   | Flexible multimodal chat      |
-| `/api/google/auth`               | GET    | Google OAuth flow             |
-| `/api/google/gmail/me`          | GET    | Retrieve recent emails        |
-| `/api/google/gmail/send`        | POST   | Send an email                 |
-| `/api/google/calendar/me`       | GET    | Get today’s events            |
-| `/api/google/calendar/events`   | POST   | Create calendar event         |
-| `/api/google/tasks/me`          | GET    | Fetch all tasks               |
-| `/api/google/tasks/create`      | POST   | Create a task                 |
+![FastAPI Endpoints](images/fastapi.png)
 
 ---
 
@@ -179,8 +169,8 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 
 ## 🔐 Environment Configuration
 
-### WhatsApp Config:
-```env
+
+```
 WHATSAPP_VERIFY_TOKEN=your_verify_token
 WHATSAPP_BUSINESS_NUMBER=your_business_phone_number
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
@@ -195,57 +185,68 @@ ELEVENLABS_API_KEY=your_eleven_labs_key
 OPENAI_API_KEY=your_openai_key
 TOGETHER_API_KEY=your_together_key
 GROQ_API_KEY=your_groq_key
+```
 
-whatsapp-multi-agent-assistant/
-├── agents/
-│   ├── audio_agents/
-│   ├── image_agents/
-│   ├── text_agents/
-│   └── graphs/
-├── memory/
-├── server/
-│   ├── app.py
-│   ├── routes/
-│   ├── services/
-│   ├── models/
-│   └── config/
-├── etl/
-│   └── daily_summary_pipeline.py
-├── ui/
-│   └── chainlit_app.py
+```bash
+whatsapp-multiagent-assistant/
+├── src/
+│   ├── agents/
+│   │   ├── audio_agents/
+│   │   │   ├── speech_to_text.py
+│   │   │   └── text_to_speech.py
+│   │   ├── image_agents/
+│   │   │   ├── image_to_text.py
+│   │   │   └── text_to_image.py
+│   │   ├── text_agents/
+│   │   │   ├── groq.py
+│   │   │   └── router.py
+│   │   └── graphs/
+│   │       ├── edges.py
+│   │       ├── nodes.py
+│   │       ├── state.py
+│   │       └── graph.py
+│   ├── memory/
+│   │   ├── short_term.py
+│   │   └── long_term.py
+│   ├── server/
+│   │   ├── app.py
+│   │   ├── routes/
+│   │   │   ├── chat.py
+│   │   │   ├── google.py
+│   │   │   └── webhook.py
+│   │   ├── services/
+│   │   │   ├── whatsapp.py
+│   │   │   ├── media.py
+│   │   │   └── google_api.py
+│   │   ├── modelss.py
+│   │   └── config.py
+│   ├── prefect/
+│   │   └── etl_daily_summary.py
+│   ├── ui/
+│   │   └── chainlit_app.py
 ├── requirements.txt
 └── README.md
+```
 
-📲 WhatsApp Business API Setup
-Create Meta Developer account
+## 📲 WhatsApp Business API Setup
 
-Set up WhatsApp Business App
+- Create Meta Developer account  
+- Set up WhatsApp Business App  
+- Configure Webhook URL using `ngrok`  
+- Verify with `WHATSAPP_VERIFY_TOKEN`  
+- Subscribe to events: `messages`, `message_reactions`, etc.
 
-Configure Webhook URL using ngrok
+## 💡 Use Cases
 
-Verify with WHATSAPP_VERIFY_TOKEN
+- **Email**: “Send an email to john@example.com about the meeting tomorrow”  
+- **Calendar**: “Schedule a meeting next Tuesday at 2 PM”  
+- **Task**: “Add a task to submit report by Friday”  
+- **Voice**: [Send voice message] → Transcribe & respond  
+- **Image**: [Send document photo] → Text extraction  
+- **Daily Summary**: “Send me today's summary”  
+- **News**: “What’s the latest AI news?”  
+- **Memory**: “What did I say earlier about my project?”
 
-Subscribe to events: messages, message_reactions, etc.
+## 📄 License
 
-💡 Use Cases
-Email: “Send an email to john@example.com about the meeting tomorrow”
-
-Calendar: “Schedule a meeting next Tuesday at 2 PM”
-
-Task: “Add a task to submit report by Friday”
-
-Voice: [Send voice message] → Transcribe & respond
-
-Image: [Send document photo] → Text extraction
-
-Daily Summary: “Send me today's summary”
-
-News: “What’s the latest AI news?”
-
-Memory: “What did I say earlier about my project?”
-
-📄 License
-This project is licensed under the MIT License. See the LICENSE file for more details.
-
-
-overview, key features, architecture, tech stack, API endpoints, setup guide, use cases, project structure, license
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for more details.
