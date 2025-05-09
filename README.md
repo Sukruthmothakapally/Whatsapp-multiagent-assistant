@@ -1,6 +1,6 @@
 # Multi-Agent AI Assistant Integrated with WhatsApp
 
-## 🧠 Overview
+## 📲 Overview
 
 An advanced, multi-modal AI assistant leveraging state-of-the-art LLMs, integrated seamlessly with WhatsApp to perform complex tasks via natural interactions. Built with **LangChain** and **LangGraph**, the system employs a scalable multi-agent architecture capable of processing text, audio, and images to automate:
 
@@ -12,7 +12,7 @@ An advanced, multi-modal AI assistant leveraging state-of-the-art LLMs, integrat
 
 ---
 
-## ✨ Key Features
+## 🤖 Key Features
 
 ### 🔗 Multi-Modal Communication
 - Interact through text, voice messages, or images directly in WhatsApp
