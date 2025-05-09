@@ -130,6 +130,7 @@ async def route_message(
 
 #         logger.info("🧠 Compiled graph retrieved successfully.")
 
+
 #         # Generate image
 #         img_bytes = mermaid_graph.draw_mermaid_png(draw_method=MermaidDrawMethod.API)
 
@@ -142,5 +143,5 @@ async def route_message(
 #     except Exception as e:
 #         logger.error("❌ Error generating graph image", exc_info=True)
 
-# # if __name__ == "__main__":
-# #     visualize_with_mermaid()
+# if __name__ == "__main__":
+#     visualize_with_mermaid()

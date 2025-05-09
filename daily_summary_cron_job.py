@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 RECIPIENT_PHONE = "16036884686"  # Replace with the recipient's number if different
 
 # API endpoint - looking at your webhook.py, the correct path is /webhook
-API_URL = "https://7420-73-231-49-218.ngrok-free.app/webhook"
+API_URL = "https://a632-73-231-49-218.ngrok-free.app/webhook"
 
 def trigger_daily_summary():
     """Trigger a daily summary by calling the FastAPI endpoint"""
