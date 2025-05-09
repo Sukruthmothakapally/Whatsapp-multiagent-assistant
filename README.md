@@ -2,12 +2,12 @@
 
 ## 📲 Overview
 
-An advanced, **multi-modal AI** assistant leveraging state-of-the-art LLMs, integrated seamlessly with WhatsApp to perform complex tasks via natural interactions. Built with **LangChain** and **LangGraph**, the system employs a scalable **multi-agent** architecture capable of processing text, audio, and images to automate:
+An advanced, **production-ready multi-modal AI** assistant using directed graph-based routing for intelligent agent coordination, integrated seamlessly with **Google and WhatsApp Business APIs**. Built with **LangChain** and **LangGraph**, the system implements **asynchronous workflows** and sophisticated **state management**, employing a scalable **multi-agent** architecture with robust error handling. The framework processes text, audio, and image inputs in real-time through specialized extraction pipelines to automate:
 
 - Email management
 - Calendar scheduling
 - Task tracking
-- Daily summaries
+- Contextual daily summaries
 - Real-time news retrieval
 
 ---
