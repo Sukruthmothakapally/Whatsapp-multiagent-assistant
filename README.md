@@ -144,6 +144,8 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 
 ---
 
+![prefect_pipeline](images/prefect.png)
+
 ## 🛠 Prerequisites
 
 - Python 3.9+
