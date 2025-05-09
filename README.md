@@ -68,6 +68,8 @@ Receive a morning summary of:
 ---
 
 ## 🧱 Architecture
+![architecture_diagram](images/whatsapp_multi_agent_ai_assistant.png)
+---
 
 The system follows a sophisticated multi-agent architecture implemented with LangGraph.
 
