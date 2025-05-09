@@ -227,6 +227,14 @@ whatsapp-multiagent-assistant/
 - Verify with `WHATSAPP_VERIFY_TOKEN`  
 - Subscribe to events: `messages`, `message_reactions`, etc.
 
+## 🔑 Google APIs Setup
+- Create Google Cloud Project
+- Enable required APIs (Gmail, Calendar, Drive, etc.)
+- Configure OAuth 2.0 credentials
+- Set authorized redirect URIs
+- Generate and secure API keys with `GOOGLE_API_KEY`
+- Set appropriate scopes: `https://www.googleapis.com/auth/calendar`, `https://www.googleapis.com/auth/gmail.send`, etc.
+
 ## 💡 Use Cases
 
 - **Email Management**: 
