@@ -132,16 +132,19 @@ The system follows a sophisticated multi-agent architecture implemented with Lan
 
 ---
 
-### 🧭 Graph Execution Flow
+### 🧭 LangGraph Execution Flow
 
 ![langgraph_workflow](images/langgraph.png)
 
 ---
 
-## 📡 API Endpoints
+## 📡 FastAPI Endpoints
 
 ![FastAPI Endpoints](images/fastapi.png)
 
+---
+## Prefect Data Pipeline
+![prefect_pipeline](images/prefect.png)
 ---
 
 ## 🛠 Prerequisites
