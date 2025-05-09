@@ -244,6 +244,7 @@ whatsapp-multiagent-assistant/
    git clone https://github.com/yourusername/your-repo-name.git
    cd your-repo-name
    pip install -r requirements.txt
+   ```
 2. **Configure environment**
 - Set up .env with all required API keys and tokens
 3. **Start services (in separate terminals)**
@@ -255,6 +256,8 @@ whatsapp-multiagent-assistant/
   # Terminal 3: Start Prefect workflow server
   cd src/prefect
   prefect server start
+  ```
+  
 4. **Begin chatting with the WhatsApp test number**
 ---
 ## 💡 Use Cases
