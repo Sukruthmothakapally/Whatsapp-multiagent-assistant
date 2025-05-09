@@ -235,6 +235,28 @@ whatsapp-multiagent-assistant/
 - Generate and secure API keys with `GOOGLE_API_KEY`
 - Set appropriate scopes: `https://www.googleapis.com/auth/calendar`, `https://www.googleapis.com/auth/gmail.send`, etc.
 
+---
+
+## 🚀 How to Run
+
+1. **Clone and install**
+   ```bash
+   git clone https://github.com/yourusername/your-repo-name.git
+   cd your-repo-name
+   pip install -r requirements.txt
+2. **Configure environment**
+- Set up .env with all required API keys and tokens
+3. **Start services (in separate terminals)**
+  ```bash
+  # Terminal 1: Start FastAPI server
+  python -m uvicorn src.server.app:app --port 8000 --reload
+  # Terminal 2: Expose webhook
+  ngrok http 8000
+  # Terminal 3: Start Prefect workflow server
+  cd src/prefect
+  prefect server start
+4. **Begin chatting with the WhatsApp test number**
+---
 ## 💡 Use Cases
 
 - **Email Management**: 
