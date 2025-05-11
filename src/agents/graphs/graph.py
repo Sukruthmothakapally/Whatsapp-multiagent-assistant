@@ -93,7 +93,7 @@ async def route_message(
 ) -> str | bytes:
     """Route a message through the LangGraph workflow."""
     conversation_id = conversation_id or "default"
-    logger.info(f"\n📨 [{conversation_id}] Received: {type(message).__name__} | Media type: {media_type}")
+    logger.info(f"\n📨 Received: {type(message).__name__} | Media type: {media_type}")
     
     # Initialize the state
     initial_state = RouterState(

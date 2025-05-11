@@ -5,28 +5,26 @@ import os
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
 
-async def send_typing_indicator(to: str):
-    """Send typing indicator to WhatsApp"""
-    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
-    headers = {
-        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": to,
-        "type": "typing",
-        "typing": {
-            "on": True
-        }
-    }
+# async def send_typing_indicator(to: str):
+#     """Send typing indicator to WhatsApp"""
+#     url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
+#     headers = {
+#         "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+#         "Content-Type": "application/json"
+#     }
+#     payload = {
+#         "messaging_product": "whatsapp",
+#         "to": to,
+#         "type": "typing",
+#         "typing": {
+#             "on": True
+#         }
+#     }
     
-    async with httpx.AsyncClient() as client:
-        try:
-            await client.post(url, headers=headers, json=payload)
-            print(f"✏️ Sent typing indicator to {to}")
-        except Exception as e:
-            print(f"❌ Failed to send typing indicator: {str(e)}")
+#     async with httpx.AsyncClient() as client:
+#         try:
+#             await client.post(url, headers=headers, json=payload)
+#         except Exception as e:
 
 async def send_whatsapp_response(to: str, reply: str | bytes):
     headers = {"Authorization": f"Bearer {WHATSAPP_TOKEN}", "Content-Type": "application/json"}
@@ -103,4 +101,4 @@ async def send_whatsapp_response(to: str, reply: str | bytes):
         if resp.status_code != 200:
             print(f"❌ Failed to send {media_type} message: {resp.status_code} - {resp.text}")
         else:
-            print(f"✅ Sent {media_type} response to {to}")
+            print(f"✅ Sent {media_type} response")

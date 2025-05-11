@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 import os
-from server.services.whatsapp import send_typing_indicator, send_whatsapp_response
+from server.services.whatsapp import send_whatsapp_response
 from server.services.media import download_whatsapp_media
 from agents.text_agents.router import route_message
 
@@ -62,15 +62,15 @@ async def whatsapp_webhook(request: Request):
             print("🔁 Ignoring message sent by bot itself.")
             return JSONResponse({"status": "ignored self-message"}, status_code=200)
 
-        # Show typing indicator
-        await send_typing_indicator(sender)
+        # # Show typing indicator
+        # await send_typing_indicator(sender)
         
         # Add to active messages
         active_messages.add(message_key)
         
         try:
             msg_type = message.get("type")
-            print(f"📩 Received {msg_type} message from {sender}")
+            print(f"📩 Received {msg_type} message")
 
             # Handle incoming content
             if msg_type == "text":

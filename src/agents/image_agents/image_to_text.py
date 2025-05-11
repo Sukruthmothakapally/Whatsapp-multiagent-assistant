@@ -45,7 +45,7 @@ class ImageToText:
                 raise ValueError("Image data is empty.")
 
             base64_image = base64.b64encode(image_bytes).decode("utf-8")
-            prompt = prompt or "Please describe what you see in this image."
+            prompt = prompt or "Please describe what you see in this image. If it's an event - craft a prompt for that"
 
             messages = [
                 {
@@ -63,7 +63,7 @@ class ImageToText:
             response = self.client.chat.completions.create(
                 model="meta-llama/llama-4-scout-17b-16e-instruct",
                 messages=messages,
-                max_tokens=1000,
+                max_tokens=500,
             )
 
             if not response.choices:

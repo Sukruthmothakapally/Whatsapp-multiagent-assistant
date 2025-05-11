@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Your WhatsApp number that should receive the summary
-RECIPIENT_PHONE = "16036884686"  # Replace with the recipient's number if different
+RECIPIENT_PHONE = "16036884686" 
 
 # API endpoint - looking at your webhook.py, the correct path is /webhook
 API_URL = "https://a632-73-231-49-218.ngrok-free.app/webhook"
