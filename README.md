@@ -1,5 +1,7 @@
 # Multi-Agent AI Assistant Integrated with WhatsApp
 
+# ![▶️ Video Demo](https://youtu.be/AtpaKgERbXw?si=JQjInwfbJFQcbVix)
+
 ## 📲 Overview
 
 An advanced, **production-ready multi-modal AI** assistant using directed graph-based routing for intelligent agent coordination, integrated seamlessly with **Google and WhatsApp Business APIs**. Built with **LangChain** and **LangGraph**, the system implements **asynchronous workflows** and sophisticated **state management**, employing a scalable **multi-agent** architecture with robust error handling. The framework processes text, audio, and image inputs in real-time through specialized extraction pipelines to automate:
