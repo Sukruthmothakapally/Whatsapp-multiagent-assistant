@@ -1,6 +1,6 @@
 # Multi-Agent AI Assistant Integrated with WhatsApp
 
-# ![▶️ Video Demo](https://youtu.be/AtpaKgERbXw?si=JQjInwfbJFQcbVix)
+# [▶️ Video Demo](https://youtu.be/AtpaKgERbXw?si=JQjInwfbJFQcbVix)
 
 ## 📲 Overview
 
